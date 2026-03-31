@@ -3,6 +3,7 @@ __pycache__/
 data/raw/
 data/clean/
 data/charts/
+data/reporting.db
 *.pyc
 .DS_Store
 *.egg-info/
