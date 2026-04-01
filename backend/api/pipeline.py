@@ -149,6 +149,51 @@ def run_pipeline():
     })
 
 
+@pipeline_bp.get("/debug-charts/<symbol>")
+def debug_charts(symbol: str):
+    """Temporary: re-run chart generation for an existing symbol and report per-chart errors."""
+    import traceback
+    import sys as _sys
+    from charts import CHARTS_DIR
+    config = {"symbol": symbol.upper(), "name": symbol.upper(),
+              "asset_type": "debug", "currency": "USD",
+              "period": "1y", "interval": "1d"}
+    try:
+        analysis = run_analysis(config)
+    except Exception as exc:
+        return jsonify({"error": f"run_analysis failed: {exc}"}), 500
+
+    from charts import (
+        _candlestick, _price_ma, _cumulative_return,
+        _drawdown, _monthly_returns, _summary_table,
+    )
+    generators = [
+        ("candlestick",         _candlestick,       True),
+        ("price_ma",            _price_ma,          analysis.get("moving_averages") is not None),
+        ("cumulative_return",   _cumulative_return,  True),
+        ("drawdown",            _drawdown,           analysis.get("drawdown_series") is not None),
+        ("monthly_returns",     _monthly_returns,    analysis.get("monthly_returns") is not None),
+        ("summary_stats_table", _summary_table,      analysis.get("summary_stats") is not None),
+    ]
+
+    results = {}
+    for name, fn, enabled in generators:
+        if not enabled:
+            results[name] = "skipped (data not available)"
+            continue
+        try:
+            path = fn(config, analysis)
+            results[name] = f"ok: {path}"
+        except Exception as exc:
+            results[name] = traceback.format_exc()
+
+    return jsonify({
+        "charts_dir": str(CHARTS_DIR),
+        "python":     _sys.version,
+        "results":    results,
+    })
+
+
 @pipeline_bp.get("/status")
 def status():
     try:

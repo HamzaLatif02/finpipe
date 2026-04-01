@@ -302,7 +302,7 @@ def generate_charts(config: dict, analysis: dict) -> list:
             path = fn(config, analysis)
             saved.append(path)
         except Exception as exc:
-            logger.warning("Failed to generate %s: %s", chart_name, exc)
+            logger.warning("Failed to generate %s: %s", chart_name, exc, exc_info=True)
 
     return saved
 
