@@ -1,8 +1,8 @@
 {
   "symbol": "AAPL",
+  "interval": "1d",
   "name": "Apple Inc.",
   "asset_type": "Stocks",
-  "currency": "USD",
   "period": "1y",
-  "interval": "1d"
+  "currency": "USD"
 }
