@@ -1,4 +1,9 @@
 APScheduler==3.11.2
+flask
+flask-cors
+celery
+redis
+gunicorn
 fpdf2==2.8.4
 matplotlib==3.9.4
 mplfinance==0.12.10b0
