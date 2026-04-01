@@ -4,11 +4,12 @@ from pathlib import Path
 import pandas as pd
 
 import fetcher
+from config import CLEAN_DIR as _CLEAN_DIR
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s — %(message)s")
 logger = logging.getLogger(__name__)
 
-CLEAN_DIR = Path("data/clean")
+CLEAN_DIR = Path(_CLEAN_DIR)
 
 
 def clean_data(config: dict) -> pd.DataFrame:

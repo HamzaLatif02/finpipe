@@ -1,0 +1,8 @@
+{
+  "symbol": "MSFT",
+  "currency": "USD",
+  "name": "Microsoft Corp.",
+  "asset_type": "Stocks",
+  "period": "6mo",
+  "interval": "1d"
+}

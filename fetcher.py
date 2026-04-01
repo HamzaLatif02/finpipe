@@ -5,10 +5,12 @@ from pathlib import Path
 import pandas as pd
 import yfinance as yf
 
+from config import RAW_DIR as _RAW_DIR
+
 logging.basicConfig(level=logging.INFO, format="%(levelname)s — %(message)s")
 logger = logging.getLogger(__name__)
 
-RAW_DIR = Path("data/raw")
+RAW_DIR = Path(_RAW_DIR)
 
 
 def fetch_data(config: dict) -> dict:

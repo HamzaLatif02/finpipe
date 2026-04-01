@@ -7,10 +7,12 @@ from pathlib import Path
 
 import pandas as pd
 
+from config import DB_PATH as _DB_PATH
+
 logging.basicConfig(level=logging.INFO, format="%(levelname)s — %(message)s")
 logger = logging.getLogger(__name__)
 
-DB_PATH = Path("data/reporting.db")
+DB_PATH = Path(_DB_PATH)
 
 
 def _connect() -> sqlite3.Connection:

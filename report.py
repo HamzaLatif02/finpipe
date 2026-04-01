@@ -311,7 +311,8 @@ class FinancialReport(FPDF):
 def generate_report(config: dict, analysis: dict, chart_paths: list) -> str:
     """Build and save the PDF report. Returns the saved file path."""
     symbol = config["symbol"]
-    out_path = Path("data") / f"{symbol}_report.pdf"
+    from config import DATA_DIR
+    out_path = Path(DATA_DIR) / f"{symbol}_report.pdf"
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     pdf = FinancialReport(config)

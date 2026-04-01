@@ -10,11 +10,12 @@ import pandas as pd
 import seaborn as sns
 
 import analysis as ana
+from config import CHARTS_DIR as _CHARTS_DIR
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s — %(message)s")
 logger = logging.getLogger(__name__)
 
-CHARTS_DIR = Path("data/charts")
+CHARTS_DIR = Path(_CHARTS_DIR)
 DPI = 150
 PRIMARY = "#2563EB"
 NEGATIVE = "#DC2626"

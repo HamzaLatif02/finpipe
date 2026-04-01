@@ -1,0 +1,8 @@
+{
+  "interval": "1d",
+  "symbol": "SPY",
+  "period": "1y",
+  "name": "SPDR S&P 500 ETF",
+  "currency": "USD",
+  "asset_type": "ETFs & Indices"
+}
