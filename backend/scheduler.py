@@ -67,7 +67,7 @@ def _send_email(to_address: str, subject: str, body: str, attachment_path: str =
             )
             msg.attach(part)
 
-    with smtplib.SMTP(host, port) as server:
+    with smtplib.SMTP(host, port, timeout=30) as server:
         server.ehlo()
         server.starttls()
         server.login(user, password)
