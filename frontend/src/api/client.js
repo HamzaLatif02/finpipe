@@ -8,6 +8,47 @@ function unwrap(response) {
   return data
 }
 
+// ── Schedule token store (localStorage) ──────────────────────────────────────
+// Persists a map of { job_id: token } so the client can authenticate its
+// own scheduled jobs across page reloads.
+
+const TOKEN_KEY = 'fp_schedule_tokens'
+
+function loadTokens() {
+  try {
+    return JSON.parse(localStorage.getItem(TOKEN_KEY) || '{}')
+  } catch {
+    return {}
+  }
+}
+
+function saveTokens(tokens) {
+  localStorage.setItem(TOKEN_KEY, JSON.stringify(tokens))
+}
+
+function storeJobToken(jobId, token) {
+  const tokens = loadTokens()
+  tokens[jobId] = token
+  saveTokens(tokens)
+}
+
+function dropJobToken(jobId) {
+  const tokens = loadTokens()
+  delete tokens[jobId]
+  saveTokens(tokens)
+}
+
+function allTokensHeader() {
+  const tokens = Object.values(loadTokens())
+  return tokens.length ? tokens.join(',') : ''
+}
+
+function tokenForJob(jobId) {
+  return loadTokens()[jobId] || ''
+}
+
+// ── API functions ─────────────────────────────────────────────────────────────
+
 export async function getCategories() {
   const res = await http.get('/assets/categories')
   return unwrap(res).categories
@@ -58,15 +99,27 @@ export async function listReports(symbol) {
 
 export async function addSchedule(payload) {
   const res = await http.post('/schedule/add', payload)
-  return unwrap(res)
+  const data = unwrap(res)
+  if (data.job_id && data.token) {
+    storeJobToken(data.job_id, data.token)
+  }
+  return data
 }
 
 export async function removeSchedule(jobId) {
-  const res = await http.delete(`/schedule/remove/${jobId}`)
-  return unwrap(res)
+  const res = await http.delete(`/schedule/remove/${jobId}`, {
+    headers: { 'X-Schedule-Token': tokenForJob(jobId) },
+  })
+  const data = unwrap(res)
+  dropJobToken(jobId)
+  return data
 }
 
 export async function listSchedules() {
-  const res = await http.get('/schedule/list')
+  const header = allTokensHeader()
+  if (!header) return []
+  const res = await http.get('/schedule/list', {
+    headers: { 'X-Schedule-Token': header },
+  })
   return unwrap(res).jobs
 }

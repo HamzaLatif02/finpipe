@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+import secrets
 import sys
 
 from flask import Blueprint, jsonify, request
@@ -9,7 +10,7 @@ _ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from scheduler import add_job, remove_job, list_jobs  # noqa: E402
+from scheduler import add_job, remove_job, list_jobs, get_stored_token  # noqa: E402
 
 schedule_bp = Blueprint("schedule", __name__)
 logger = logging.getLogger(__name__)
@@ -22,6 +23,12 @@ _VALID_FREQUENCIES = {"daily", "weekly", "monthly"}
 
 def _validate_email(addr: str) -> bool:
     return bool(_EMAIL_RE.match(addr or ""))
+
+
+def _parse_token_header() -> set:
+    """Parse X-Schedule-Token header into a set of token strings."""
+    raw = request.headers.get("X-Schedule-Token", "")
+    return {t.strip() for t in raw.split(",") if t.strip()}
 
 
 @schedule_bp.post("/add")
@@ -56,26 +63,35 @@ def add():
         "day":         body.get("day"),
     }
 
-    # Sanitise email for use in job_id
     safe_email = re.sub(r"[^a-zA-Z0-9]", "_", email)
     job_id     = f"{config['symbol']}_{safe_email}_{frequency}"
 
+    token = secrets.token_urlsafe(32)
+
     try:
-        add_job(job_id, config, schedule, email)
+        add_job(job_id, config, schedule, email, token)
     except Exception as exc:
         logger.exception("add_job failed")
         return jsonify({"error": str(exc)}), 500
 
     # Retrieve next_run_time from the live job list
-    jobs = list_jobs()
-    job  = next((j for j in jobs if j["job_id"] == job_id), None)
+    jobs     = list_jobs()
+    job      = next((j for j in jobs if j["job_id"] == job_id), None)
     next_run = job["next_run_time"] if job else None
 
-    return jsonify({"status": "scheduled", "job_id": job_id, "next_run": next_run})
+    return jsonify({"status": "scheduled", "job_id": job_id, "token": token, "next_run": next_run})
 
 
 @schedule_bp.delete("/remove/<job_id>")
 def remove(job_id: str):
+    client_tokens = _parse_token_header()
+
+    stored_token = get_stored_token(job_id)
+    if stored_token is None:
+        return jsonify({"error": f"Job '{job_id}' not found."}), 404
+    if stored_token not in client_tokens:
+        return jsonify({"error": "invalid token"}), 403
+
     try:
         existed = remove_job(job_id)
     except Exception as exc:
@@ -90,9 +106,27 @@ def remove(job_id: str):
 
 @schedule_bp.get("/list")
 def list_all():
+    client_tokens = _parse_token_header()
+    if not client_tokens:
+        return jsonify({"jobs": []})
+
     try:
-        jobs = list_jobs()
-        return jsonify({"jobs": jobs})
+        all_jobs = list_jobs()
     except Exception as exc:
         logger.exception("list_jobs failed")
         return jsonify({"error": str(exc)}), 500
+
+    filtered = [
+        {
+            "job_id":        j["job_id"],
+            "symbol":        j["symbol"],
+            "name":          j["name"],
+            "email":         j["email"],
+            "frequency":     j["frequency"],
+            "next_run_time": j["next_run_time"],
+        }
+        for j in all_jobs
+        if get_stored_token(j["job_id"]) in client_tokens
+    ]
+
+    return jsonify({"jobs": filtered})

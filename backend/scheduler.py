@@ -5,6 +5,7 @@ Jobs are persisted to data/scheduled_jobs.json so they survive restarts.
 import json
 import logging
 import os
+import secrets
 import smtplib
 import sys
 from email.mime.application import MIMEApplication
@@ -142,6 +143,14 @@ def start_scheduler() -> None:
         return
     _scheduler = BackgroundScheduler()
     _jobs_meta = _load_jobs()
+    # Back-fill tokens for jobs created before token auth was added
+    needs_save = False
+    for meta in _jobs_meta.values():
+        if "token" not in meta:
+            meta["token"] = secrets.token_urlsafe(32)
+            needs_save = True
+    if needs_save:
+        _save_jobs()
     for job_id, meta in _jobs_meta.items():
         try:
             trigger = _build_trigger(meta["schedule"])
@@ -160,7 +169,7 @@ def start_scheduler() -> None:
     logger.info("Scheduler started (%d job(s) loaded)", len(_jobs_meta))
 
 
-def add_job(job_id: str, config: dict, schedule: dict, email: str) -> None:
+def add_job(job_id: str, config: dict, schedule: dict, email: str, token: str) -> None:
     if not _scheduler:
         raise RuntimeError("Scheduler is not running.")
     trigger = _build_trigger(schedule)
@@ -172,9 +181,15 @@ def add_job(job_id: str, config: dict, schedule: dict, email: str) -> None:
         replace_existing=True,
         name=f"{config['symbol']} — {schedule['frequency']}",
     )
-    _jobs_meta[job_id] = {"config": config, "email": email, "schedule": schedule}
+    _jobs_meta[job_id] = {"config": config, "email": email, "schedule": schedule, "token": token}
     _save_jobs()
     logger.info("Job added: %s", job_id)
+
+
+def get_stored_token(job_id: str):
+    """Return the stored token for a job, or None if the job doesn't exist."""
+    meta = _jobs_meta.get(job_id)
+    return meta["token"] if meta else None
 
 
 def remove_job(job_id: str) -> bool:
