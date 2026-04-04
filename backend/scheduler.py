@@ -8,6 +8,7 @@ import os
 import secrets
 import smtplib
 import sys
+import urllib.request
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -146,6 +147,27 @@ def _execute_job(config: dict, email: str) -> None:
         logger.exception("Scheduled job failed for %s", symbol)
 
 
+# ── Keepalive (prevents Render free-tier from sleeping) ───────────────────────
+
+def _keepalive() -> None:
+    """Ping the app's own health endpoint every 14 min to keep Render awake.
+
+    Render's free-tier shuts down processes after 15 min of inactivity.
+    APScheduler dies with the process, so any scheduled jobs would be missed.
+    This job only activates when RENDER_EXTERNAL_URL is present in the
+    environment (automatically set by Render) — it is a no-op locally.
+    """
+    url = os.getenv("RENDER_EXTERNAL_URL", "").rstrip("/")
+    if not url:
+        return
+    target = f"{url}/api/health"
+    try:
+        with urllib.request.urlopen(target, timeout=10) as resp:
+            logger.info("Keepalive ping → %s  [%s]", target, resp.status)
+    except Exception as exc:
+        logger.warning("Keepalive ping failed: %s", exc)
+
+
 # ── Trigger builder ───────────────────────────────────────────────────────────
 
 def _build_trigger(schedule: dict) -> CronTrigger:
@@ -175,6 +197,7 @@ def start_scheduler() -> None:
     _scheduler = BackgroundScheduler(timezone=utc)
     logger.info("Scheduler timezone: %s", utc)
     _jobs_meta = _load_jobs_from_disk()
+
     # Back-fill tokens for jobs created before token auth was added
     needs_save = False
     for meta in _jobs_meta.values():
@@ -183,6 +206,8 @@ def start_scheduler() -> None:
             needs_save = True
     if needs_save:
         _save_jobs()
+
+    # Register user-defined jobs
     for job_id, meta in _jobs_meta.items():
         try:
             trigger = _build_trigger(meta["schedule"])
@@ -199,8 +224,27 @@ def start_scheduler() -> None:
             # Log only the job_id and error message — never log meta,
             # which contains the token.
             logger.error("Failed to restore job %s: %s", job_id, exc)
+
+    # Keepalive job — fires every 14 min to prevent Render free-tier sleep
+    _scheduler.add_job(
+        _keepalive,
+        CronTrigger(minute="*/14", timezone=utc),
+        id="__keepalive__",
+        replace_existing=True,
+        name="Render keepalive",
+    )
+
     _scheduler.start()
-    logger.info("Scheduler started (%d job(s) loaded)", len(_jobs_meta))
+
+    # Log every registered job at startup so the Render logs make it obvious
+    # whether jobs were loaded correctly.
+    all_ids = [j.id for j in _scheduler.get_jobs()]
+    user_ids = [jid for jid in all_ids if not jid.startswith("__")]
+    logger.info(
+        "SCHEDULER STARTED — %d user job(s) + keepalive. IDs: %s",
+        len(user_ids),
+        user_ids or "(none)",
+    )
 
 
 def add_job(job_id: str, config: dict, schedule: dict, email: str, token: str) -> None:
