@@ -2,6 +2,7 @@ import logging
 import os
 import re
 import secrets
+import smtplib
 import sys
 
 from flask import Blueprint, jsonify, request
@@ -10,7 +11,7 @@ _ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from scheduler import add_job, remove_job, list_jobs, get_stored_token, get_job_meta  # noqa: E402
+from scheduler import add_job, remove_job, list_jobs, get_stored_token, get_job_meta, run_pipeline_and_email  # noqa: E402
 
 schedule_bp = Blueprint("schedule", __name__)
 logger = logging.getLogger(__name__)
@@ -122,10 +123,23 @@ def send_now(job_id: str):
     logger.info("SEND NOW triggered for %s -> %s", symbol, email)
 
     try:
-        from scheduler import _execute_job
-        _execute_job(config, email)
+        run_pipeline_and_email(config, email)
+    except smtplib.SMTPAuthenticationError as exc:
+        logger.error("SEND NOW auth failed for %s: %s", symbol, exc)
+        return jsonify({
+            "status": "error",
+            "error": (
+                "SMTP authentication failed. Check that SMTP_USER and "
+                "SMTP_PASSWORD are set correctly in the Render environment. "
+                "SMTP_PASSWORD must be a 16-character Gmail App Password, "
+                "not your regular Gmail password."
+            ),
+        }), 500
+    except smtplib.SMTPException as exc:
+        logger.error("SEND NOW SMTP error for %s: %s", symbol, exc)
+        return jsonify({"status": "error", "error": f"Email delivery failed: {exc}"}), 500
     except Exception as exc:
-        logger.exception("send-now failed for %s", symbol)
+        logger.exception("SEND NOW pipeline failed for %s", symbol)
         return jsonify({"status": "error", "error": str(exc)}), 500
 
     return jsonify({"status": "sent", "symbol": symbol, "email": email})

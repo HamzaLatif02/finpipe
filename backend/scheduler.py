@@ -95,55 +95,71 @@ def _send_email(to_address: str, subject: str, body: str, attachment_path: str =
             )
             msg.attach(part)
 
-    with smtplib.SMTP(host, port, timeout=30) as server:
+    with smtplib.SMTP(host, port, timeout=20) as server:
         server.ehlo()
         server.starttls()
+        server.ehlo()
         server.login(user, password)
         server.send_message(msg)
 
     logger.info("Email sent to %s — %s", to_address, subject)
 
 
-# ── Job function (runs in background thread) ──────────────────────────────────
+# ── Core pipeline + email logic (raises on any failure) ───────────────────────
+
+def run_pipeline_and_email(config: dict, email: str) -> None:
+    """Run the full pipeline for *config* and email the PDF to *email*.
+
+    Raises on any failure so callers can decide whether to swallow or
+    surface the exception (scheduled jobs swallow; send-now surfaces it).
+    """
+    from fetcher import fetch_data
+    from cleaner import clean_data
+    from db import init_db, insert_prices, insert_info
+    from analysis import run_analysis
+    from charts import generate_charts
+    from report import generate_report
+
+    symbol = config["symbol"]
+    init_db()
+    fetched     = fetch_data(config)
+    cleaned_df  = clean_data(config)
+    insert_prices(config, cleaned_df)
+    insert_info(config, fetched["info"])
+    analysis    = run_analysis(config)
+    chart_paths = generate_charts(config, analysis)
+    pdf_path    = generate_report(config, analysis, chart_paths)
+
+    subject = f"Financial Report: {config['name']} ({symbol})"
+    body = (
+        f"Please find attached the automated financial report for "
+        f"{config['name']} ({symbol}).\n\n"
+        f"Period: {config.get('period', '')}  |  "
+        f"Interval: {config.get('interval', '')}\n\n"
+        "This report was generated automatically by Financial Pipeline.\n"
+        "Not financial advice."
+    )
+
+    recipients = [email]
+    default_recipient = os.getenv("REPORT_RECIPIENT", "")
+    if default_recipient and default_recipient not in recipients:
+        recipients.append(default_recipient)
+
+    for addr in recipients:
+        _send_email(addr, subject, body, pdf_path)
+
+    logger.info("Pipeline and email completed for %s", symbol)
+
+
+# ── Job function (runs in background thread via APScheduler) ──────────────────
 
 def _execute_job(config: dict, email: str) -> None:
+    """APScheduler entry point.  Swallows all exceptions so a failing job
+    does not crash the scheduler thread."""
     symbol = config["symbol"]
-    logger.info("Scheduled job starting: %s → %s", symbol, email)
+    logger.info("Scheduled job starting: %s -> %s", symbol, email)
     try:
-        from fetcher import fetch_data
-        from cleaner import clean_data
-        from db import init_db, insert_prices, insert_info
-        from analysis import run_analysis
-        from charts import generate_charts
-        from report import generate_report
-
-        init_db()
-        fetched     = fetch_data(config)
-        cleaned_df  = clean_data(config)
-        insert_prices(config, cleaned_df)
-        insert_info(config, fetched["info"])
-        analysis    = run_analysis(config)
-        chart_paths = generate_charts(config, analysis)
-        pdf_path    = generate_report(config, analysis, chart_paths)
-
-        subject = f"Financial Report: {config['name']} ({symbol})"
-        body = (
-            f"Please find attached the automated financial report for "
-            f"{config['name']} ({symbol}).\n\n"
-            f"Period: {config.get('period', '')}  |  "
-            f"Interval: {config.get('interval', '')}\n\n"
-            "This report was generated automatically by Financial Pipeline.\n"
-            "Not financial advice."
-        )
-
-        recipients = [email]
-        default_recipient = os.getenv("REPORT_RECIPIENT", "")
-        if default_recipient and default_recipient not in recipients:
-            recipients.append(default_recipient)
-
-        for addr in recipients:
-            _send_email(addr, subject, body, pdf_path)
-
+        run_pipeline_and_email(config, email)
         logger.info("Scheduled job completed: %s", symbol)
     except Exception:
         logger.exception("Scheduled job failed for %s", symbol)
