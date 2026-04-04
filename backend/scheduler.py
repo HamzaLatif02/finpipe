@@ -17,7 +17,9 @@ from typing import Optional
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
-from pytz import utc
+from pytz import timezone
+
+_TZ = timezone("Europe/London")
 
 # Project root is one level above backend/
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -171,21 +173,21 @@ def _keepalive() -> None:
 # ── Trigger builder ───────────────────────────────────────────────────────────
 
 def _build_trigger(schedule: dict) -> CronTrigger:
-    """Build a UTC-pinned CronTrigger.
+    """Build a Europe/London-pinned CronTrigger.
 
-    The hour/minute values stored on disk are always UTC (the frontend
-    converts from the user's local time before sending them).
-    Passing timezone=utc here ensures there is no ambiguity regardless
-    of the server's local timezone.
+    Hour/minute values are stored as London local time (the frontend sends
+    exactly what the user typed).  Passing timezone=_TZ means APScheduler
+    fires the job at that wall-clock time in London, automatically handling
+    the GMT→BST and BST→GMT transitions without any manual offset arithmetic.
     """
     frequency = schedule["frequency"]
     hour      = int(schedule.get("hour", 8))
     minute    = int(schedule.get("minute", 0))
     if frequency == "weekly":
-        return CronTrigger(day_of_week=schedule["day_of_week"], hour=hour, minute=minute, timezone=utc)
+        return CronTrigger(day_of_week=schedule["day_of_week"], hour=hour, minute=minute, timezone=_TZ)
     if frequency == "monthly":
-        return CronTrigger(day=int(schedule["day"]), hour=hour, minute=minute, timezone=utc)
-    return CronTrigger(hour=hour, minute=minute, timezone=utc)  # daily
+        return CronTrigger(day=int(schedule["day"]), hour=hour, minute=minute, timezone=_TZ)
+    return CronTrigger(hour=hour, minute=minute, timezone=_TZ)  # daily
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -194,8 +196,8 @@ def start_scheduler() -> None:
     global _scheduler, _jobs_meta
     if _scheduler and _scheduler.running:
         return
-    _scheduler = BackgroundScheduler(timezone=utc)
-    logger.info("Scheduler timezone: %s", utc)
+    _scheduler = BackgroundScheduler(timezone=_TZ)
+    logger.info("Scheduler timezone: %s", _TZ)
     _jobs_meta = _load_jobs_from_disk()
 
     # Back-fill tokens for jobs created before token auth was added
@@ -228,7 +230,7 @@ def start_scheduler() -> None:
     # Keepalive job — fires every 14 min to prevent Render free-tier sleep
     _scheduler.add_job(
         _keepalive,
-        CronTrigger(minute="*/14", timezone=utc),
+        CronTrigger(minute="*/14", timezone=_TZ),
         id="__keepalive__",
         replace_existing=True,
         name="Render keepalive",
