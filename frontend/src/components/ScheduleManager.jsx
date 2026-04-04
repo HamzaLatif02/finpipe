@@ -49,16 +49,17 @@ export default function ScheduleManager({ onClose }) {
     setRowErrors(prev  => { const n = { ...prev };  delete n[job.job_id]; return n })
     setRowMessages(prev => { const n = { ...prev }; delete n[job.job_id]; return n })
     try {
-      await sendNow(job.job_id)
-      const msg = `Report sent to ${job.email}`
+      const res = await sendNow(job.job_id)
+      // The endpoint returns immediately (queued) — the email arrives ~1–2 min later
+      const msg = res.message || `Report queued — email will arrive at ${job.email} shortly`
       setRowMessages(prev => ({ ...prev, [job.job_id]: msg }))
-      // Auto-dismiss the success message after 5 s
+      // Auto-dismiss after 10 s (longer than "sent" since the email is still in flight)
       clearTimeout(dismissTimers.current[job.job_id])
       dismissTimers.current[job.job_id] = setTimeout(() => {
         setRowMessages(prev => { const n = { ...prev }; delete n[job.job_id]; return n })
-      }, 5000)
+      }, 10000)
     } catch (err) {
-      setRowErrors(prev => ({ ...prev, [job.job_id]: `Failed to send: ${err.message}` }))
+      setRowErrors(prev => ({ ...prev, [job.job_id]: err.message }))
     } finally {
       setSending(null)
     }

@@ -2,8 +2,8 @@ import logging
 import os
 import re
 import secrets
-import smtplib
 import sys
+import threading
 
 from flask import Blueprint, jsonify, request
 
@@ -11,7 +11,7 @@ _ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from scheduler import add_job, remove_job, list_jobs, get_stored_token, get_job_meta, run_pipeline_and_email  # noqa: E402
+from scheduler import add_job, remove_job, list_jobs, get_stored_token, get_job_meta, run_pipeline_and_email  # noqa: E402  # noqa: E402
 
 schedule_bp = Blueprint("schedule", __name__)
 logger = logging.getLogger(__name__)
@@ -107,6 +107,16 @@ def remove(job_id: str):
 
 @schedule_bp.post("/send-now/<job_id>")
 def send_now(job_id: str):
+    """Validate the token synchronously, then run the pipeline + email in a
+    background thread and return immediately.
+
+    Running SMTP inside a gunicorn sync worker blocks the worker thread for
+    the entire SMTP round-trip (up to 5 × socket_timeout seconds).  If the
+    outbound connection to smtp.gmail.com is rate-limited or slow, gunicorn's
+    SIGABRT fires and raises SystemExit(1) — which bypasses all our
+    except-Exception handlers.  Moving the work off the request thread fixes
+    the timeout entirely.
+    """
     client_tokens = _parse_token_header()
 
     stored_token = get_stored_token(job_id)
@@ -115,34 +125,29 @@ def send_now(job_id: str):
     if stored_token not in client_tokens:
         return jsonify({"error": "Invalid token — cannot send this report."}), 403
 
-    meta = get_job_meta(job_id)
+    meta   = get_job_meta(job_id)
     config = meta["config"]
     email  = meta["email"]
     symbol = config["symbol"]
 
-    logger.info("SEND NOW triggered for %s -> %s", symbol, email)
+    logger.info("SEND NOW queued for %s -> %s", symbol, email)
 
-    try:
-        run_pipeline_and_email(config, email)
-    except smtplib.SMTPAuthenticationError as exc:
-        logger.error("SEND NOW auth failed for %s: %s", symbol, exc)
-        return jsonify({
-            "status": "error",
-            "error": (
-                "SMTP authentication failed. Check that SMTP_USER and "
-                "SMTP_PASSWORD are set correctly in the Render environment. "
-                "SMTP_PASSWORD must be a 16-character Gmail App Password, "
-                "not your regular Gmail password."
-            ),
-        }), 500
-    except smtplib.SMTPException as exc:
-        logger.error("SEND NOW SMTP error for %s: %s", symbol, exc)
-        return jsonify({"status": "error", "error": f"Email delivery failed: {exc}"}), 500
-    except Exception as exc:
-        logger.exception("SEND NOW pipeline failed for %s", symbol)
-        return jsonify({"status": "error", "error": str(exc)}), 500
+    def _bg():
+        try:
+            run_pipeline_and_email(config, email)
+            logger.info("SEND NOW completed for %s -> %s", symbol, email)
+        except Exception:
+            logger.exception("SEND NOW background task failed for %s", symbol)
 
-    return jsonify({"status": "sent", "symbol": symbol, "email": email})
+    thread = threading.Thread(target=_bg, daemon=True, name=f"sendnow-{job_id}")
+    thread.start()
+
+    return jsonify({
+        "status":  "queued",
+        "symbol":  symbol,
+        "email":   email,
+        "message": f"Report is being generated. Email will arrive at {email} in ~1–2 minutes.",
+    })
 
 
 @schedule_bp.get("/list")
