@@ -1,7 +1,7 @@
 """
 Background scheduler for automated pipeline + email jobs.
-Jobs are persisted to the SQLite database (scheduled_jobs table) so they
-survive Render restarts within the same deployment.
+Jobs are persisted to PostgreSQL (DATABASE_URL) so they survive Render
+service restarts and redeploys.
 """
 import base64
 import logging
@@ -31,7 +31,7 @@ _ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from db import init_db, save_scheduled_job, load_scheduled_jobs, delete_scheduled_job  # noqa: E402
+from pg_jobs import init_pg_jobs_table, pg_save_job, pg_load_jobs, pg_delete_job  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -201,10 +201,10 @@ def start_scheduler() -> None:
     logger.info("=" * 60)
     logger.info("[PID %d] SCHEDULER STARTING  (timezone: %s)", _pid(), _TZ)
 
-    init_db()  # ensure the scheduled_jobs table exists
-    rows = load_scheduled_jobs()
+    init_pg_jobs_table()
+    rows = pg_load_jobs()
     _jobs_meta = {r["job_id"]: {"config": r["config"], "email": r["email"], "schedule": r["schedule"], "token": r["token"]} for r in rows}
-    logger.info("[PID %d] Jobs loaded from SQLite: %d", _pid(), len(_jobs_meta))
+    logger.info("[PID %d] Jobs loaded from PostgreSQL: %d", _pid(), len(_jobs_meta))
 
     if not _jobs_meta:
         logger.info("[PID %d] SCHEDULER: no user jobs in DB — schedule via the web app.", _pid())
@@ -276,7 +276,7 @@ def add_job(job_id: str, config: dict, schedule: dict, email: str, token: str) -
         name=f"{config['symbol']} — {schedule['frequency']}",
     )
     _jobs_meta[job_id] = {"config": config, "email": email, "schedule": schedule, "token": token}
-    save_scheduled_job(job_id, config, schedule, email, token)
+    pg_save_job(job_id, config, schedule, email, token)
     logger.info("[PID %d] ADD JOB: %s", _pid(), job_id)
 
 
@@ -300,7 +300,7 @@ def remove_job(job_id: str) -> bool:
         pass  # job may not exist in scheduler if it was never loaded
     existed = job_id in _jobs_meta
     _jobs_meta.pop(job_id, None)
-    delete_scheduled_job(job_id)
+    pg_delete_job(job_id)
     logger.info("Job removed: %s", job_id)
     return existed
 
