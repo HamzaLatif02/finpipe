@@ -1,4 +1,5 @@
-import gevent_patch  # must be first — patches sockets before any other import  # noqa: F401
+import eventlet          # must be first — patches sockets before any other import
+eventlet.monkey_patch()
 import atexit
 import logging
 import os

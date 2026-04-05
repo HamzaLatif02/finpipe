@@ -9,9 +9,9 @@ gevent worker: long-running pipeline requests (yfinance fetch + PDF gen)
 are I/O-bound.  gevent's cooperative multitasking handles them without
 blocking the worker or triggering Gunicorn's SIGABRT timeout kill.
 """
-worker_class       = "gevent"
+worker_class       = "eventlet"
 workers            = 1    # exactly one worker — APScheduler is not multi-process safe
 worker_connections = 100
-timeout            = 300  # generous ceiling; gevent doesn't use sync-worker heartbeat
+timeout            = 300  # generous ceiling; eventlet doesn't use sync-worker heartbeat
 keepalive          = 5
 loglevel           = "info"
