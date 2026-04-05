@@ -54,12 +54,19 @@ if _IS_PROD:
 
 
 # ── Scheduler lifecycle ───────────────────────────────────────────────────────
-# Skip starting the scheduler in the Werkzeug reloader's parent process to
-# avoid running two scheduler instances in debug mode.
+import sys as _sys
 from scheduler import start_scheduler, shutdown_scheduler  # noqa: E402
 
-if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-    start_scheduler()
+# Under gunicorn the post_fork hook (gunicorn.conf.py) starts the scheduler
+# inside the worker process after forking, so the scheduler thread and the
+# request handlers share the same memory space.
+#
+# Here we only start it for direct invocation (python app.py) and the
+# Werkzeug dev-server reloader child — NOT when the gunicorn master is
+# importing the app to validate it before forking.
+if "gunicorn" not in _sys.modules:
+    if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        start_scheduler()
 
 atexit.register(shutdown_scheduler)
 
