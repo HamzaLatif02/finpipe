@@ -1,12 +1,11 @@
 """
 Background scheduler for automated pipeline + email jobs.
-Jobs are persisted to data/scheduled_jobs.json so they survive restarts.
+Jobs are persisted to the SQLite database (scheduled_jobs table) so they
+survive Render restarts within the same deployment.
 """
 import base64
-import json
 import logging
 import os
-import secrets
 import sys
 import urllib.request
 from pathlib import Path
@@ -24,53 +23,15 @@ _ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from config import DATA_DIR  # noqa: E402 — needs _ROOT on sys.path first
+from db import init_db, save_scheduled_job, load_scheduled_jobs, delete_scheduled_job  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
 _scheduler: Optional[BackgroundScheduler] = None
 # job_id → {config, email, schedule, token}
-# "token" is a secret credential — never log it.
+# In-memory cache of the SQLite scheduled_jobs table.
+# Token is a secret credential — never log it.
 _jobs_meta: dict = {}
-_JOBS_FILE = os.path.join(DATA_DIR, "scheduled_jobs.json")
-
-
-# ── Persistence ───────────────────────────────────────────────────────────────
-
-def _save_jobs() -> None:
-    """Write _jobs_meta to disk.  The token field is intentionally persisted
-    so jobs survive restarts; treat the file like a secrets store."""
-    os.makedirs(DATA_DIR, exist_ok=True)
-    with open(_JOBS_FILE, "w") as f:
-        json.dump(_jobs_meta, f, indent=2, default=str)
-
-
-def _load_jobs_from_disk() -> dict:
-    """Read scheduled_jobs.json and return a clean meta dict.
-
-    Disk format per entry:
-        job_id: { config, email, schedule, token }
-
-    The token is a secret credential.  It is read from disk and held in
-    memory but is never written to logs.
-    """
-    if not os.path.isfile(_JOBS_FILE):
-        logger.info("scheduled_jobs.json not found — starting with no jobs")
-        return {}
-    logger.info("Loading scheduled_jobs.json (%d bytes)", os.path.getsize(_JOBS_FILE))
-    with open(_JOBS_FILE) as f:
-        raw = json.load(f)
-    result = {}
-    for job_id, meta in raw.items():
-        result[job_id] = {
-            "config":   meta.get("config",   {}),
-            "email":    meta.get("email",    ""),
-            "schedule": meta.get("schedule", {}),
-            # Preserve token exactly as stored; empty string for legacy entries
-            # that pre-date token auth (start_scheduler will back-fill them).
-            "token":    meta.get("token",    ""),
-        }
-    return result
 
 
 # ── Email (Resend API — HTTPS, works on Render free tier) ─────────────────────
@@ -229,31 +190,17 @@ def start_scheduler() -> None:
 
     _scheduler = BackgroundScheduler(timezone=_TZ)
 
-    # ── Load persisted jobs ────────────────────────────────────────────────────
+    # ── Load persisted jobs from SQLite ───────────────────────────────────────
     logger.info("=" * 60)
     logger.info("SCHEDULER STARTING  (timezone: %s)", _TZ)
-    logger.info("Jobs file: %s", _JOBS_FILE)
-    logger.info("Jobs file exists: %s", os.path.isfile(_JOBS_FILE))
 
-    _jobs_meta = _load_jobs_from_disk()
-    logger.info("Jobs loaded from disk: %d", len(_jobs_meta))
+    init_db()  # ensure the scheduled_jobs table exists
+    rows = load_scheduled_jobs()
+    _jobs_meta = {r["job_id"]: {"config": r["config"], "email": r["email"], "schedule": r["schedule"], "token": r["token"]} for r in rows}
+    logger.info("Jobs loaded from SQLite: %d", len(_jobs_meta))
 
     if not _jobs_meta:
-        logger.warning(
-            "SCHEDULER: no user jobs found.  "
-            "This is normal after a fresh Render deploy — the ephemeral "
-            "filesystem wipes scheduled_jobs.json on every deployment.  "
-            "Open the app and reschedule any reports you need."
-        )
-
-    # Back-fill tokens for jobs created before token auth was added
-    needs_save = False
-    for meta in _jobs_meta.values():
-        if not meta.get("token"):
-            meta["token"] = secrets.token_urlsafe(32)
-            needs_save = True
-    if needs_save:
-        _save_jobs()
+        logger.info("SCHEDULER: no user jobs in DB — schedule via the web app.")
 
     # ── Register user-defined jobs ─────────────────────────────────────────────
     for job_id, meta in _jobs_meta.items():
@@ -318,7 +265,7 @@ def add_job(job_id: str, config: dict, schedule: dict, email: str, token: str) -
         name=f"{config['symbol']} — {schedule['frequency']}",
     )
     _jobs_meta[job_id] = {"config": config, "email": email, "schedule": schedule, "token": token}
-    _save_jobs()
+    save_scheduled_job(job_id, config, schedule, email, token)
     logger.info("Job added: %s", job_id)
 
 
@@ -342,7 +289,7 @@ def remove_job(job_id: str) -> bool:
         pass  # job may not exist in scheduler if it was never loaded
     existed = job_id in _jobs_meta
     _jobs_meta.pop(job_id, None)
-    _save_jobs()
+    delete_scheduled_job(job_id)
     logger.info("Job removed: %s", job_id)
     return existed
 

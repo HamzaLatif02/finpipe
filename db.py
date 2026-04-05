@@ -37,7 +37,7 @@ def _now() -> str:
 # ---------------------------------------------------------------------------
 
 def init_db() -> None:
-    """Create data/reporting.db and the asset_runs and asset_info tables."""
+    """Create data/reporting.db and all required tables."""
     with _connect() as conn:
         conn.executescript("""
             CREATE TABLE IF NOT EXISTS asset_runs (
@@ -59,6 +59,15 @@ def init_db() -> None:
                 currency    TEXT,
                 info_json   TEXT,
                 updated_at  TEXT    NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS scheduled_jobs (
+                job_id        TEXT PRIMARY KEY,
+                config_json   TEXT    NOT NULL,
+                schedule_json TEXT    NOT NULL,
+                email         TEXT    NOT NULL,
+                token         TEXT    NOT NULL,
+                created_at    TEXT    NOT NULL
             );
         """)
     logger.info("Database initialised at %s", DB_PATH)
@@ -230,6 +239,61 @@ def list_assets() -> pd.DataFrame:
         df = pd.read_sql_query(sql, conn)
     logger.info("Listed %d asset run(s).", len(df))
     return df
+
+
+# ---------------------------------------------------------------------------
+# 6. scheduled_jobs persistence
+# ---------------------------------------------------------------------------
+
+def save_scheduled_job(job_id: str, config: dict, schedule: dict, email: str, token: str) -> None:
+    """Insert or replace a scheduled job record."""
+    sql = """
+        INSERT OR REPLACE INTO scheduled_jobs
+            (job_id, config_json, schedule_json, email, token, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """
+    with _connect() as conn:
+        conn.execute(sql, (
+            job_id,
+            json.dumps(config),
+            json.dumps(schedule),
+            email,
+            token,
+            _now(),
+        ))
+    logger.info("Saved scheduled job: %s", job_id)
+
+
+def load_scheduled_jobs() -> list:
+    """Return all scheduled jobs as a list of dicts with parsed config/schedule."""
+    sql = "SELECT job_id, config_json, schedule_json, email, token FROM scheduled_jobs"
+    with _connect() as conn:
+        rows = conn.execute(sql).fetchall()
+    result = []
+    for job_id, config_json, schedule_json, email, token in rows:
+        try:
+            result.append({
+                "job_id":   job_id,
+                "config":   json.loads(config_json),
+                "schedule": json.loads(schedule_json),
+                "email":    email,
+                "token":    token,
+            })
+        except Exception as exc:
+            logger.error("Skipping malformed scheduled job %s: %s", job_id, exc)
+    logger.info("Loaded %d scheduled job(s) from DB", len(result))
+    return result
+
+
+def delete_scheduled_job(job_id: str) -> bool:
+    """Delete a scheduled job; returns True if a row was removed."""
+    sql = "DELETE FROM scheduled_jobs WHERE job_id = ?"
+    with _connect() as conn:
+        cursor = conn.execute(sql, (job_id,))
+        deleted = cursor.rowcount > 0
+    if deleted:
+        logger.info("Deleted scheduled job: %s", job_id)
+    return deleted
 
 
 # ---------------------------------------------------------------------------
