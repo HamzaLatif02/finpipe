@@ -14,6 +14,7 @@ from typing import Optional
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.interval import IntervalTrigger
 from pytz import timezone
 
 _TZ = timezone("Europe/London")
@@ -54,7 +55,9 @@ def _load_jobs_from_disk() -> dict:
     memory but is never written to logs.
     """
     if not os.path.isfile(_JOBS_FILE):
+        logger.info("scheduled_jobs.json not found — starting with no jobs")
         return {}
+    logger.info("Loading scheduled_jobs.json (%d bytes)", os.path.getsize(_JOBS_FILE))
     with open(_JOBS_FILE) as f:
         raw = json.load(f)
     result = {}
@@ -187,6 +190,16 @@ def _keepalive() -> None:
         logger.warning("Keepalive ping failed: %s", exc)
 
 
+def _heartbeat() -> None:
+    """Log a heartbeat every 5 minutes to confirm the scheduler thread is alive."""
+    user_jobs = [j for j in _scheduler.get_jobs() if not j.id.startswith("__")]
+    logger.info(
+        "SCHEDULER HEARTBEAT — running. %d user job(s): %s",
+        len(user_jobs),
+        [j.id for j in user_jobs] or "(none — reschedule via the app)",
+    )
+
+
 # ── Trigger builder ───────────────────────────────────────────────────────────
 
 def _build_trigger(schedule: dict) -> CronTrigger:
@@ -213,9 +226,25 @@ def start_scheduler() -> None:
     global _scheduler, _jobs_meta
     if _scheduler and _scheduler.running:
         return
+
     _scheduler = BackgroundScheduler(timezone=_TZ)
-    logger.info("Scheduler timezone: %s", _TZ)
+
+    # ── Load persisted jobs ────────────────────────────────────────────────────
+    logger.info("=" * 60)
+    logger.info("SCHEDULER STARTING  (timezone: %s)", _TZ)
+    logger.info("Jobs file: %s", _JOBS_FILE)
+    logger.info("Jobs file exists: %s", os.path.isfile(_JOBS_FILE))
+
     _jobs_meta = _load_jobs_from_disk()
+    logger.info("Jobs loaded from disk: %d", len(_jobs_meta))
+
+    if not _jobs_meta:
+        logger.warning(
+            "SCHEDULER: no user jobs found.  "
+            "This is normal after a fresh Render deploy — the ephemeral "
+            "filesystem wipes scheduled_jobs.json on every deployment.  "
+            "Open the app and reschedule any reports you need."
+        )
 
     # Back-fill tokens for jobs created before token auth was added
     needs_save = False
@@ -226,7 +255,7 @@ def start_scheduler() -> None:
     if needs_save:
         _save_jobs()
 
-    # Register user-defined jobs
+    # ── Register user-defined jobs ─────────────────────────────────────────────
     for job_id, meta in _jobs_meta.items():
         try:
             trigger = _build_trigger(meta["schedule"])
@@ -238,32 +267,42 @@ def start_scheduler() -> None:
                 replace_existing=True,
                 name=f"{meta['config']['symbol']} — {meta['schedule']['frequency']}",
             )
-            logger.info("Restored scheduled job: %s", job_id)
+            logger.info("Restored job: %s", job_id)
         except Exception as exc:
-            # Log only the job_id and error message — never log meta,
-            # which contains the token.
             logger.error("Failed to restore job %s: %s", job_id, exc)
 
-    # Keepalive job — fires every 14 min to prevent Render free-tier sleep
+    # ── Infrastructure jobs ────────────────────────────────────────────────────
+    # Keepalive: pings /api/health every 14 min to prevent Render free-tier
+    # spin-down.  IntervalTrigger is more reliable than CronTrigger here
+    # because it fires relative to when the scheduler started, not at fixed
+    # clock minutes (which could all fall inside a spin-down window).
     _scheduler.add_job(
         _keepalive,
-        CronTrigger(minute="*/14", timezone=_TZ),
+        IntervalTrigger(minutes=14, timezone=_TZ),
         id="__keepalive__",
         replace_existing=True,
         name="Render keepalive",
     )
+    # Heartbeat: logs a message every 5 min so Render logs confirm the
+    # scheduler thread is still alive.
+    _scheduler.add_job(
+        _heartbeat,
+        IntervalTrigger(minutes=5, timezone=_TZ),
+        id="__heartbeat__",
+        replace_existing=True,
+        name="Scheduler heartbeat",
+    )
 
     _scheduler.start()
 
-    # Log every registered job at startup so the Render logs make it obvious
-    # whether jobs were loaded correctly.
-    all_ids = [j.id for j in _scheduler.get_jobs()]
-    user_ids = [jid for jid in all_ids if not jid.startswith("__")]
-    logger.info(
-        "SCHEDULER STARTED — %d user job(s) + keepalive. IDs: %s",
-        len(user_ids),
-        user_ids or "(none)",
-    )
+    # ── Startup summary ────────────────────────────────────────────────────────
+    user_jobs = [j for j in _scheduler.get_jobs() if not j.id.startswith("__")]
+    logger.info("SCHEDULER STARTED — %d user job(s)", len(user_jobs))
+    for j in user_jobs:
+        logger.info("  JOB: %s | next run: %s", j.id, j.next_run_time)
+    if not user_jobs:
+        logger.info("  (no user jobs — reschedule via the web app)")
+    logger.info("=" * 60)
 
 
 def add_job(job_id: str, config: dict, schedule: dict, email: str, token: str) -> None:

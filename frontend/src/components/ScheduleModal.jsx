@@ -17,10 +17,10 @@ const HOURS = Array.from({ length: 24 }, (_, i) => ({
   label: String(i).padStart(2, '0'),
 }))
 
-const MINUTES = [
-  { value: 0,  label: '00' },
-  { value: 30, label: '30' },
-]
+const MINUTES = Array.from({ length: 12 }, (_, i) => ({
+  value: i * 5,
+  label: String(i * 5).padStart(2, '0'),
+}))
 
 const DAYS_OF_MONTH = Array.from({ length: 28 }, (_, i) => ({
   value: i + 1,
