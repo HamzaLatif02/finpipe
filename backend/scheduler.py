@@ -57,7 +57,7 @@ def _send_email(to_address: str, subject: str, body: str, attachment_path: str =
         raise RuntimeError("RESEND_API_KEY is not set in the environment.")
 
     params: resend.Emails.SendParams = {
-        "from":    "Financial Pipeline <onboarding@resend.dev>",
+        "from":    "Financial Pipeline <reports@finpipe.xyz>",
         "to":      [to_address],
         "subject": subject,
         "text":    body,
