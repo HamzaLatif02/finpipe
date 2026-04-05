@@ -32,7 +32,6 @@ from db import init_db, save_scheduled_job, load_scheduled_jobs, delete_schedule
 
 logger = logging.getLogger(__name__)
 
-_scheduler: Optional[BackgroundScheduler] = None
 # job_id → {config, email, schedule, token}
 # In-memory cache of the SQLite scheduled_jobs table.
 # Token is a secret credential — never log it.
