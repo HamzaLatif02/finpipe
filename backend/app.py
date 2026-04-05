@@ -1,3 +1,4 @@
+import gevent_patch  # must be first — patches sockets before any other import  # noqa: F401
 import atexit
 import logging
 import os

@@ -160,6 +160,12 @@ def _keepalive() -> None:
 
 def _heartbeat() -> None:
     """Log a heartbeat every 5 minutes to confirm the scheduler thread is alive."""
+    # Refresh the in-memory job store before counting, so any jobs added
+    # since the last heartbeat are included in the count.
+    try:
+        _scheduler._jobstores["default"].get_all_jobs()
+    except Exception:
+        pass
     all_jobs = _scheduler.get_jobs()
     logger.info("[PID %d] ALL JOBS IN SCHEDULER: %s", _pid(), [j.id for j in all_jobs])
     user_jobs = [j for j in all_jobs if not j.id.startswith("__")]
@@ -275,9 +281,24 @@ def add_job(job_id: str, config: dict, schedule: dict, email: str, token: str) -
         replace_existing=True,
         name=f"{config['symbol']} — {schedule['frequency']}",
     )
+    # Force the in-memory job store to refresh, then confirm the job is live.
+    try:
+        _scheduler._jobstores["default"].get_all_jobs()
+    except Exception:
+        pass
+    live_job = _scheduler.get_job(job_id)
+    if live_job:
+        logger.info(
+            "[PID %d] ADD JOB confirmed in live scheduler: %s | next run: %s",
+            _pid(), job_id, live_job.next_run_time,
+        )
+    else:
+        logger.error(
+            "[PID %d] ADD JOB failed to appear in live scheduler: %s",
+            _pid(), job_id,
+        )
     _jobs_meta[job_id] = {"config": config, "email": email, "schedule": schedule, "token": token}
     pg_save_job(job_id, config, schedule, email, token)
-    logger.info("[PID %d] ADD JOB: %s", _pid(), job_id)
 
 
 def get_stored_token(job_id: str):
