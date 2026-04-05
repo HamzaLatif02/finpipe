@@ -2,16 +2,13 @@
 Background scheduler for automated pipeline + email jobs.
 Jobs are persisted to data/scheduled_jobs.json so they survive restarts.
 """
+import base64
 import json
 import logging
 import os
 import secrets
-import smtplib
 import sys
 import urllib.request
-from email.mime.application import MIMEApplication
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from pathlib import Path
 from typing import Optional
 
@@ -73,36 +70,40 @@ def _load_jobs_from_disk() -> dict:
     return result
 
 
-# ── Email ─────────────────────────────────────────────────────────────────────
+# ── Email (Resend API — HTTPS, works on Render free tier) ─────────────────────
 
 def _send_email(to_address: str, subject: str, body: str, attachment_path: str = None) -> None:
-    host     = os.getenv("SMTP_HOST", "smtp.gmail.com")
-    port     = int(os.getenv("SMTP_PORT", 587))
-    user     = os.getenv("SMTP_USER", "")
-    password = os.getenv("SMTP_PASSWORD", "")
+    """Send an email via the Resend API.
 
-    msg = MIMEMultipart()
-    msg["From"]    = user
-    msg["To"]      = to_address
-    msg["Subject"] = subject
-    msg.attach(MIMEText(body, "plain"))
+    Uses HTTPS rather than SMTP so it works on Render's free tier,
+    which blocks outbound connections on port 587.
+    Requires RESEND_API_KEY in the environment.
+    """
+    import resend  # imported here so the module loads without it if not installed
+
+    resend.api_key = os.getenv("RESEND_API_KEY", "")
+    if not resend.api_key:
+        raise RuntimeError("RESEND_API_KEY is not set in the environment.")
+
+    params: resend.Emails.SendParams = {
+        "from":    "Financial Pipeline <onboarding@resend.dev>",
+        "to":      [to_address],
+        "subject": subject,
+        "text":    body,
+    }
 
     if attachment_path and Path(attachment_path).is_file():
         with open(attachment_path, "rb") as fh:
-            part = MIMEApplication(fh.read(), _subtype="pdf")
-            part["Content-Disposition"] = (
-                f'attachment; filename="{Path(attachment_path).name}"'
-            )
-            msg.attach(part)
+            pdf_b64 = base64.b64encode(fh.read()).decode("utf-8")
+        params["attachments"] = [
+            {
+                "filename": Path(attachment_path).name,
+                "content":  pdf_b64,
+            }
+        ]
 
-    with smtplib.SMTP(host, port, timeout=20) as server:
-        server.ehlo()
-        server.starttls()
-        server.ehlo()
-        server.login(user, password)
-        server.send_message(msg)
-
-    logger.info("Email sent to %s — %s", to_address, subject)
+    response = resend.Emails.send(params)
+    logger.info("Email sent via Resend to %s — id: %s", to_address, response["id"])
 
 
 # ── Core pipeline + email logic (raises on any failure) ───────────────────────
