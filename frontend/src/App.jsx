@@ -382,7 +382,7 @@ export default function App() {
                 message={progress.message}
                 percent={progress.percent}
                 usingFallback={usingFallback}
-                title="Analysing\u2026"
+                title="Analysing..."
               />
             )}
 

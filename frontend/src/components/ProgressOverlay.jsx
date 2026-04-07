@@ -1,4 +1,4 @@
-export default function ProgressOverlay({ message, percent = 0, usingFallback = false, title = 'Analysing\u2026', subtitle = null }) {
+export default function ProgressOverlay({ message, percent = 0, usingFallback = false, title = 'Analysing...', subtitle = null }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -48,7 +48,7 @@ export default function ProgressOverlay({ message, percent = 0, usingFallback = 
             minHeight: '20px',
             transition: 'opacity var(--t-base) var(--ease)',
           }}>
-            {message || '\u00a0'}
+            {message || ' '}
           </div>
         </div>
 

@@ -42,6 +42,8 @@ socketio = SocketIO(
     async_mode="eventlet",
     logger=False,
     engineio_logger=False,
+    ping_timeout=120,    # seconds — outlasts AI analysis calls
+    ping_interval=25,    # send ping every 25 s to keep Render proxy alive
 )
 
 limiter.init_app(app)

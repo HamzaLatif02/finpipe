@@ -87,7 +87,7 @@ export default function Compare() {
             message={progress.message}
             percent={progress.percent}
             usingFallback={usingFallback}
-            title="Comparing\u2026"
+            title="Comparing..."
             subtitle={syms.a && syms.b ? `${syms.a} vs ${syms.b}` : null}
           />
         )}

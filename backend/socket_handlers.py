@@ -6,7 +6,6 @@ Import order matters:
   This module does  from app import socketio  (module already in sys.cache)
   progress.py  also does  from app import socketio  (same cached module)
 """
-import json
 import logging
 import os
 import sys
@@ -56,11 +55,27 @@ def _chart_urls_for(paths: list) -> list:
     return [f"/api/reports/charts/{Path(p).stem}" for p in paths]
 
 
+def _start_keepalive(run_id: str, stop_event: threading.Event, interval: int = 15):
+    """Emit a ws_ping to the run's room every `interval` seconds.
+
+    This prevents Render's proxy (and other reverse proxies) from closing the
+    WebSocket connection as idle during long-running pipeline stages such as
+    AI analysis which can take 30-40 seconds without a socket write.
+    """
+    def _loop():
+        while not stop_event.wait(interval):
+            socketio.emit("ws_ping", {"run_id": run_id}, room=run_id)
+            logger.debug("[WS] keepalive ping → run_id=%s", run_id)
+    t = threading.Thread(target=_loop, daemon=True)
+    t.start()
+    return t
+
+
 # ── Connection lifecycle ───────────────────────────────────────────────────────
 
 @socketio.on("connect")
 def on_connect():
-    logger.info("[WS] client connected: %s", getattr(threading.current_thread(), "name", "?"))
+    logger.info("[WS] client connected")
 
 
 @socketio.on("disconnect")
@@ -93,32 +108,33 @@ def on_start_pipeline(data):
     config["symbol"] = symbol
 
     def run():
+        stop_ka = threading.Event()
+        _start_keepalive(run_id, stop_ka)
         try:
-            emit_progress(run_id, "init", "Initialising", 0)
+            emit_progress(run_id, "init",    "Initialising",          0)
             init_db()
 
-            emit_progress(run_id, "fetch", "Fetching market data", 15)
-            fetched   = fetch_data(config)
-            prices_df = fetched["prices"]
-            info_dict = fetched["info"]
+            emit_progress(run_id, "fetch",   "Fetching market data",  15)
+            fetched    = fetch_data(config)
+            info_dict  = fetched["info"]
 
-            emit_progress(run_id, "clean", "Cleaning data", 30)
+            emit_progress(run_id, "clean",   "Cleaning data",         30)
             cleaned_df = clean_data(config)
 
-            emit_progress(run_id, "store", "Storing to database", 42)
+            emit_progress(run_id, "store",   "Storing to database",   42)
             insert_prices(config, cleaned_df)
             insert_info(config, info_dict)
 
-            emit_progress(run_id, "analyse", "Running analysis", 55)
+            emit_progress(run_id, "analyse", "Running analysis",      55)
             analysis = run_analysis(config)
 
-            emit_progress(run_id, "charts", "Generating charts", 70)
+            emit_progress(run_id, "charts",  "Generating charts",     70)
             chart_paths = generate_charts(config, analysis)
 
-            emit_progress(run_id, "report", "Building PDF report", 85)
+            emit_progress(run_id, "report",  "Building PDF report",   85)
             generate_report(config, analysis, chart_paths)
 
-            emit_progress(run_id, "complete", "Complete", 100)
+            emit_progress(run_id, "complete", "Complete",             100)
 
             raw_info      = analysis.get("asset_info") or {}
             selected_info = {k: raw_info[k] for k in _INFO_FIELDS if raw_info.get(k) is not None}
@@ -138,6 +154,8 @@ def on_start_pipeline(data):
         except Exception as exc:
             logger.exception("[WS] pipeline_error run_id=%s", run_id)
             socketio.emit("pipeline_error", {"run_id": run_id, "error": str(exc)}, room=run_id)
+        finally:
+            stop_ka.set()
 
     threading.Thread(target=run, daemon=True).start()
 
@@ -154,6 +172,8 @@ def on_start_comparison(data):
         return
 
     def run():
+        stop_ka = threading.Event()
+        _start_keepalive(run_id, stop_ka)
         try:
             sym_a = config_a.get("symbol", "A").strip().upper()
             sym_b = config_b.get("symbol", "B").strip().upper()
@@ -176,7 +196,6 @@ def on_start_comparison(data):
             insert_info(config_b, fetched_b["info"])
 
             emit_progress(run_id, "store",   "Storing to database",          34)
-            # (already stored above; this step communicates DB flush)
 
             emit_progress(run_id, "analyse", "Running comparison analysis",  46)
             comparison = run_comparison(config_a, config_b)
@@ -210,5 +229,7 @@ def on_start_comparison(data):
         except Exception as exc:
             logger.exception("[WS] comparison_error run_id=%s", run_id)
             socketio.emit("pipeline_error", {"run_id": run_id, "error": str(exc)}, room=run_id)
+        finally:
+            stop_ka.set()
 
     threading.Thread(target=run, daemon=True).start()
