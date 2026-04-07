@@ -7,6 +7,7 @@ from pathlib import Path
 
 from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
+from flask_socketio import SocketIO
 from dotenv import load_dotenv
 
 from api.assets     import assets_bp
@@ -32,6 +33,16 @@ else:
     app = Flask(__name__)
     CORS(app)
     logger.info("Development mode — CORS enabled, React served by Vite")
+
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret-key")
+
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode="eventlet",
+    logger=False,
+    engineio_logger=False,
+)
 
 limiter.init_app(app)
 
@@ -74,6 +85,8 @@ with app.app_context():
 
 atexit.register(shutdown_scheduler)
 
+# Import socket handlers AFTER socketio is defined (avoids circular import)
+import socket_handlers  # noqa: F401, E402
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001, debug=not _IS_PROD)
+    socketio.run(app, host="0.0.0.0", port=5001, debug=True)

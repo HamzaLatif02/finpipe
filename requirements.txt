@@ -5,6 +5,7 @@ pytz
 resend
 flask
 flask-cors
+flask-socketio
 Flask-Limiter
 celery
 redis

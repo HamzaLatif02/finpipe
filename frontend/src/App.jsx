@@ -3,8 +3,10 @@ import { Clock, ChevronRight, CalendarCheck, X, GitCompare } from 'lucide-react'
 import AssetSelector from './components/AssetSelector'
 import Dashboard from './components/Dashboard'
 import ScheduleManager from './components/ScheduleManager'
+import ProgressOverlay from './components/ProgressOverlay'
 import Compare from './pages/Compare'
-import { runPipeline, getPreviousRuns, listReports, confirmSchedule } from './api/client'
+import { getPreviousRuns, listReports, confirmSchedule } from './api/client'
+import { usePipelineSocket } from './hooks/usePipelineSocket'
 import { saveToken } from './utils/tokenStore'
 import './App.css'
 
@@ -169,88 +171,6 @@ function PreviousRunsModal({ onClose, onSelect }) {
   )
 }
 
-// ── Loading Overlay ────────────────────────────────────────────────────────
-
-function LoadingOverlay({ message }) {
-  return (
-    <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      minHeight: '60vh',
-      animation: 'fp-fade-in var(--t-base) var(--ease)',
-    }}>
-      <div className="fp-card" style={{
-        padding: '48px 40px',
-        maxWidth: '380px', width: '100%',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 28,
-        textAlign: 'center',
-      }}>
-        {/* Animated spinner ring */}
-        <div style={{ position: 'relative', width: 60, height: 60 }}>
-          {/* Outer ring track */}
-          <svg
-            width="60" height="60" viewBox="0 0 60 60" fill="none"
-            style={{ position: 'absolute', inset: 0 }}
-          >
-            <circle cx="30" cy="30" r="26" stroke="var(--border-default)" strokeWidth="2" />
-          </svg>
-          {/* Spinning arc */}
-          <svg
-            width="60" height="60" viewBox="0 0 60 60" fill="none"
-            className="fp-spinner"
-            style={{ position: 'absolute', inset: 0 }}
-          >
-            <path
-              d="M30 4 A 26 26 0 0 1 56 30"
-              stroke="var(--accent)"
-              strokeWidth="2"
-              strokeLinecap="round"
-              fill="none"
-            />
-          </svg>
-          {/* Logo inside */}
-          <div style={{
-            position: 'absolute', inset: 0, display: 'flex',
-            alignItems: 'center', justifyContent: 'center',
-          }}>
-            <LogoIcon />
-          </div>
-        </div>
-
-        <div>
-          <div style={{
-            fontFamily: 'var(--font-display)', fontWeight: 700,
-            fontSize: '16px', color: 'var(--text-1)', marginBottom: 8,
-          }}>
-            Analysing…
-          </div>
-          <div style={{
-            fontSize: '13px', color: 'var(--text-2)',
-            minHeight: '20px',
-            transition: 'opacity var(--t-base) var(--ease)',
-          }}>
-            {message}
-          </div>
-          <div style={{ fontSize: '12px', color: 'var(--text-3)', marginTop: 6 }}>
-            Usually takes 20–40 seconds
-          </div>
-        </div>
-
-        {/* Progress dots */}
-        <div style={{ display: 'flex', gap: 6 }}>
-          {[0, 1, 2].map(i => (
-            <div key={i} style={{
-              width: 5, height: 5, borderRadius: '50%',
-              background: 'var(--accent)',
-              opacity: 0.3,
-              animation: `fp-fade-in 0.8s ease ${i * 0.25}s infinite alternate`,
-            }} />
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ── App ────────────────────────────────────────────────────────────────────
 
 export default function App() {
@@ -258,10 +178,33 @@ export default function App() {
   const [view,          setView]          = useState('idle')
   const [result,        setResult]        = useState(null)
   const [error,         setError]         = useState(null)
-  const [loadingMsg,    setLoadingMsg]    = useState('')
+  const [pendingConfig, setPendingConfig] = useState(null)
   const [showRuns,      setShowRuns]      = useState(false)
   const [showSchedule,  setShowSchedule]  = useState(false)
   const [confirmResult, setConfirmResult] = useState(null)  // {success, symbol, message}
+
+  const {
+    progress,
+    result:        wsResult,
+    error:         wsError,
+    usingFallback,
+    runPipeline:   startPipeline,
+    resetResult:   wsReset,
+  } = usePipelineSocket()
+
+  // When WebSocket pipeline completes, show dashboard
+  useEffect(() => {
+    if (!wsResult) return
+    setResult({ ...wsResult, period: pendingConfig?.period, interval: pendingConfig?.interval })
+    setView('done')
+  }, [wsResult])
+
+  // When WebSocket pipeline errors, show error and return to idle
+  useEffect(() => {
+    if (!wsError) return
+    setError(wsError)
+    setView('idle')
+  }, [wsError])
 
   // Handle /confirm?ct=... links clicked from confirmation emails
   useEffect(() => {
@@ -284,38 +227,11 @@ export default function App() {
     }
   }, [])
 
-  async function handleSubmit(config) {
+  function handleSubmit(config) {
     setError(null)
     setView('loading')
-
-    const steps = [
-      'Connecting to Yahoo Finance…',
-      `Fetching price history for ${config.symbol}…`,
-      'Cleaning and validating data…',
-      'Running financial analysis…',
-      'Generating charts…',
-      'Building PDF report…',
-      'Almost done…',
-    ]
-    setLoadingMsg(steps[0])
-    let stepIndex = 1
-    const interval = setInterval(() => {
-      if (stepIndex < steps.length) {
-        setLoadingMsg(steps[stepIndex])
-        stepIndex++
-      }
-    }, 3000)
-
-    try {
-      const data = await runPipeline(config)
-      clearInterval(interval)
-      setResult({ ...data, period: config.period, interval: config.interval })
-      setView('done')
-    } catch (err) {
-      clearInterval(interval)
-      setError(err.message)
-      setView('idle')
-    }
+    setPendingConfig(config)
+    startPipeline(config)
   }
 
   function handlePreviousRunSelect(run, reports) {
@@ -461,10 +377,17 @@ export default function App() {
               </div>
             )}
 
-            {view === 'loading' && <LoadingOverlay message={loadingMsg} />}
+            {view === 'loading' && (
+              <ProgressOverlay
+                message={progress.message}
+                percent={progress.percent}
+                usingFallback={usingFallback}
+                title="Analysing\u2026"
+              />
+            )}
 
             {view === 'done' && result && (
-              <Dashboard result={result} onReset={() => { setView('idle'); setResult(null) }} />
+              <Dashboard result={result} onReset={() => { setView('idle'); setResult(null); wsReset() }} />
             )}
           </div>
         )}

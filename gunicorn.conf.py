@@ -11,7 +11,7 @@ blocking the worker or triggering Gunicorn's SIGABRT timeout kill.
 """
 worker_class       = "eventlet"
 workers            = 1    # exactly one worker — APScheduler is not multi-process safe
-worker_connections = 100
+worker_connections = 1000
 timeout            = 300  # generous ceiling; eventlet doesn't use sync-worker heartbeat
 keepalive          = 5
 loglevel           = "info"
