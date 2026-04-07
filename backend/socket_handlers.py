@@ -10,6 +10,8 @@ import logging
 import os
 import sys
 import threading
+import time
+from collections import defaultdict
 from pathlib import Path
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -17,6 +19,7 @@ if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
 from flask_socketio import join_room, emit  # noqa: E402
+from flask import request as flask_request  # noqa: E402
 from app import socketio                    # noqa: E402
 from progress import emit_progress          # noqa: E402
 
@@ -31,6 +34,44 @@ from comparison_charts   import generate_comparison_charts
 from comparison_report   import generate_comparison_report
 
 logger = logging.getLogger(__name__)
+
+# ── WebSocket rate limiter ────────────────────────────────────────────────────
+# Simple in-memory sliding-window counter (pipeline + comparison combined).
+# Limits: 10 per minute, 30 per hour, per IP.
+
+_ws_lock    = threading.Lock()
+_ws_counts  = defaultdict(list)   # ip → [timestamp, ...]
+
+_WS_LIMITS = [
+    (60,    10),   # 10 per minute
+    (3600,  30),   # 30 per hour
+]
+
+
+def _ws_check_rate_limit(ip: str) -> tuple[bool, int]:
+    """Return (allowed, retry_after_seconds).
+
+    Prunes old timestamps and checks all window limits.  If any limit is
+    exceeded, returns (False, seconds_until_oldest_entry_expires).
+    """
+    now = time.time()
+    with _ws_lock:
+        timestamps = _ws_counts[ip]
+        # Prune entries older than the largest window (1 hour)
+        _ws_counts[ip] = [t for t in timestamps if now - t < 3600]
+        timestamps = _ws_counts[ip]
+
+        for window, limit in _WS_LIMITS:
+            recent = [t for t in timestamps if now - t < window]
+            if len(recent) >= limit:
+                oldest_in_window = min(recent)
+                retry_after = int(window - (now - oldest_in_window)) + 1
+                return False, retry_after
+
+        # Record this new call
+        _ws_counts[ip].append(now)
+        return True, 0
+
 
 _INFO_FIELDS = (
     "longName", "shortName", "quoteType", "currency", "exchange",
@@ -104,6 +145,17 @@ def on_start_pipeline(data):
         emit("pipeline_error", {"error": "run_id and config are required"})
         return
 
+    client_ip = flask_request.remote_addr or "unknown"
+    allowed, retry_after = _ws_check_rate_limit(client_ip)
+    if not allowed:
+        emit("pipeline_error", {
+            "run_id":      run_id,
+            "error":       f"Rate limit exceeded. Try again in {retry_after} seconds.",
+            "rate_limited": True,
+            "retry_after": retry_after,
+        })
+        return
+
     symbol = config.get("symbol", "?").strip().upper()
     config["symbol"] = symbol
 
@@ -169,6 +221,17 @@ def on_start_comparison(data):
     config_b = (data or {}).get("config_b") or {}
     if not run_id or not config_a or not config_b:
         emit("pipeline_error", {"error": "run_id, config_a and config_b are required"})
+        return
+
+    client_ip = flask_request.remote_addr or "unknown"
+    allowed, retry_after = _ws_check_rate_limit(client_ip)
+    if not allowed:
+        emit("pipeline_error", {
+            "run_id":       run_id,
+            "error":        f"Rate limit exceeded. Try again in {retry_after} seconds.",
+            "rate_limited": True,
+            "retry_after":  retry_after,
+        })
         return
 
     def run():

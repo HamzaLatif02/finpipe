@@ -57,7 +57,7 @@ def _chart_urls(paths: list, symbol: str) -> list:
 
 
 @pipeline_bp.post("/run")
-@limiter.limit("5 per hour")
+@limiter.limit("30 per day;10 per hour;3 per minute")
 def run_pipeline():
     body = request.get_json(silent=True) or {}
 

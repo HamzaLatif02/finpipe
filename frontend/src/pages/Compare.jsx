@@ -14,11 +14,12 @@ export default function Compare() {
 
   const {
     progress,
-    result:        wsResult,
-    error:         wsError,
+    result:              wsResult,
+    error:               wsError,
     usingFallback,
-    runComparison: startComparison,
-    resetResult:   wsReset,
+    rateLimitRetryAfter: wsRateLimitRetryAfter,
+    runComparison:       startComparison,
+    resetResult:         wsReset,
   } = usePipelineSocket()
 
   useEffect(() => {
@@ -29,9 +30,10 @@ export default function Compare() {
 
   useEffect(() => {
     if (!wsError) return
+    if (wsRateLimitRetryAfter !== null) return  // stay in 'loading' for rate limit countdown
     setError(wsError)
     setView('idle')
-  }, [wsError])
+  }, [wsError, wsRateLimitRetryAfter])
 
   function handleSubmit(config_a, config_b) {
     setError(null)
@@ -83,13 +85,27 @@ export default function Compare() {
         )}
 
         {view === 'loading' && (
-          <ProgressOverlay
-            message={progress.message}
-            percent={progress.percent}
-            usingFallback={usingFallback}
-            title="Comparing..."
-            subtitle={syms.a && syms.b ? `${syms.a} vs ${syms.b}` : null}
-          />
+          <>
+            <ProgressOverlay
+              message={progress.message}
+              percent={progress.percent}
+              usingFallback={usingFallback}
+              title="Comparing..."
+              subtitle={syms.a && syms.b ? `${syms.a} vs ${syms.b}` : null}
+              rateLimitError={wsRateLimitRetryAfter !== null}
+              rateLimitRetryAfter={wsRateLimitRetryAfter}
+            />
+            {wsRateLimitRetryAfter !== null && (
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+                <button
+                  className="fp-btn-secondary"
+                  onClick={() => { wsReset(); setView('idle') }}
+                >
+                  Back to search
+                </button>
+              </div>
+            )}
+          </>
         )}
 
         {view === 'done' && result && (

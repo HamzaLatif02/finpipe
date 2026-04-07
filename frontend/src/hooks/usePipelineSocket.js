@@ -49,11 +49,12 @@ function connectSocket() {
 }
 
 export function usePipelineSocket() {
-  const [progress,      setProgress]      = useState({ percent: 0, message: '' })
-  const [isLoading,     setIsLoading]     = useState(false)
-  const [result,        setResult]        = useState(null)
-  const [error,         setError]         = useState(null)
-  const [usingFallback, setUsingFallback] = useState(false)
+  const [progress,            setProgress]            = useState({ percent: 0, message: '' })
+  const [isLoading,           setIsLoading]           = useState(false)
+  const [result,              setResult]              = useState(null)
+  const [error,               setError]               = useState(null)
+  const [usingFallback,       setUsingFallback]       = useState(false)
+  const [rateLimitRetryAfter, setRateLimitRetryAfter] = useState(null)
 
   // Refs that survive across closures and renders
   const socketRef      = useRef(null)
@@ -92,6 +93,17 @@ export function usePipelineSocket() {
       })
       const data = await res.json()
       stopFallback()
+      if (res.status === 429) {
+        const retryMins = data.retry_after ? Math.ceil(data.retry_after / 60) : null
+        const msg = retryMins
+          ? `Too many requests. Please wait ${retryMins} minute${retryMins !== 1 ? 's' : ''} before trying again.`
+          : 'Too many requests. Please wait a moment before trying again.'
+        isLoadingRef.current = false
+        setIsLoading(false)
+        setError(msg)
+        setRateLimitRetryAfter(data.retry_after || null)
+        return null
+      }
       if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`)
       setProgress({ percent: 100, message: 'Complete' })
       isLoadingRef.current = false
@@ -117,6 +129,17 @@ export function usePipelineSocket() {
       })
       const data = await res.json()
       stopFallback()
+      if (res.status === 429) {
+        const retryMins = data.retry_after ? Math.ceil(data.retry_after / 60) : null
+        const msg = retryMins
+          ? `Too many requests. Please wait ${retryMins} minute${retryMins !== 1 ? 's' : ''} before trying again.`
+          : 'Too many requests. Please wait a moment before trying again.'
+        isLoadingRef.current = false
+        setIsLoading(false)
+        setError(msg)
+        setRateLimitRetryAfter(data.retry_after || null)
+        return null
+      }
       if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`)
       setProgress({ percent: 100, message: 'Complete' })
       isLoadingRef.current = false
@@ -218,7 +241,16 @@ export function usePipelineSocket() {
           cleanupSocket(socket)
           isLoadingRef.current = false
           setIsLoading(false)
-          setError(data.error || 'Pipeline failed')
+          if (data.rate_limited) {
+            const retryMins = data.retry_after ? Math.ceil(data.retry_after / 60) : null
+            const msg = retryMins
+              ? `Too many requests. Please wait ${retryMins} minute${retryMins !== 1 ? 's' : ''} before trying again.`
+              : 'Too many requests. Please wait a moment before trying again.'
+            setError(msg)
+            setRateLimitRetryAfter(data.retry_after || null)
+          } else {
+            setError(data.error || 'Pipeline failed')
+          }
           resolve(null)
         })
 
@@ -281,7 +313,16 @@ export function usePipelineSocket() {
           cleanupSocket(socket)
           isLoadingRef.current = false
           setIsLoading(false)
-          setError(data.error || 'Comparison failed')
+          if (data.rate_limited) {
+            const retryMins = data.retry_after ? Math.ceil(data.retry_after / 60) : null
+            const msg = retryMins
+              ? `Too many requests. Please wait ${retryMins} minute${retryMins !== 1 ? 's' : ''} before trying again.`
+              : 'Too many requests. Please wait a moment before trying again.'
+            setError(msg)
+            setRateLimitRetryAfter(data.retry_after || null)
+          } else {
+            setError(data.error || 'Comparison failed')
+          }
           resolve(null)
         })
 
@@ -301,8 +342,9 @@ export function usePipelineSocket() {
     setResult(null); setError(null)
     setProgress({ percent: 0, message: '' })
     setUsingFallback(false)
+    setRateLimitRetryAfter(null)
     pendingRunRef.current = null
   }, [])
 
-  return { progress, isLoading, result, error, usingFallback, runPipeline, runComparison, resetResult }
+  return { progress, isLoading, result, error, usingFallback, rateLimitRetryAfter, runPipeline, runComparison, resetResult }
 }

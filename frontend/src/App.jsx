@@ -185,11 +185,12 @@ export default function App() {
 
   const {
     progress,
-    result:        wsResult,
-    error:         wsError,
+    result:              wsResult,
+    error:               wsError,
     usingFallback,
-    runPipeline:   startPipeline,
-    resetResult:   wsReset,
+    rateLimitRetryAfter: wsRateLimitRetryAfter,
+    runPipeline:         startPipeline,
+    resetResult:         wsReset,
   } = usePipelineSocket()
 
   // When WebSocket pipeline completes, show dashboard
@@ -206,11 +207,16 @@ export default function App() {
   }, [wsResult])
 
   // When WebSocket pipeline errors, show error and return to idle
+  // Rate limit errors stay on 'loading' so ProgressOverlay shows the countdown
   useEffect(() => {
     if (!wsError) return
+    if (wsRateLimitRetryAfter !== null) {
+      // Stay in 'loading' view — ProgressOverlay will show rate limit state
+      return
+    }
     setError(wsError)
     setView('idle')
-  }, [wsError])
+  }, [wsError, wsRateLimitRetryAfter])
 
   // Handle /confirm?ct=... links clicked from confirmation emails
   useEffect(() => {
@@ -384,12 +390,26 @@ export default function App() {
             )}
 
             {view === 'loading' && (
-              <ProgressOverlay
-                message={progress.message}
-                percent={progress.percent}
-                usingFallback={usingFallback}
-                title="Analysing..."
-              />
+              <>
+                <ProgressOverlay
+                  message={progress.message}
+                  percent={progress.percent}
+                  usingFallback={usingFallback}
+                  title="Analysing..."
+                  rateLimitError={wsRateLimitRetryAfter !== null}
+                  rateLimitRetryAfter={wsRateLimitRetryAfter}
+                />
+                {wsRateLimitRetryAfter !== null && (
+                  <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+                    <button
+                      className="fp-btn-secondary"
+                      onClick={() => { wsReset(); setView('idle') }}
+                    >
+                      Back to search
+                    </button>
+                  </div>
+                )}
+              </>
             )}
 
             {view === 'done' && result && (

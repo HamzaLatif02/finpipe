@@ -6,7 +6,9 @@ resend
 flask
 flask-cors
 flask-socketio
+eventlet
 Flask-Limiter
+limits
 celery
 redis
 gunicorn

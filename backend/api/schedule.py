@@ -16,6 +16,7 @@ from scheduler import (  # noqa: E402
     get_stored_token, get_job_meta, run_pipeline_and_email,
 )
 from pg_jobs import confirm_job, pg_load_confirmed_jobs, pg_load_pending_jobs  # noqa: E402
+from extensions import limiter  # noqa: E402
 
 schedule_bp = Blueprint("schedule", __name__)
 logger = logging.getLogger(__name__)
@@ -65,6 +66,7 @@ def _send_confirmation_email(email: str, symbol: str, schedule: dict, confirm_ur
 # ── POST /add ──────────────────────────────────────────────────────────────────
 
 @schedule_bp.post("/add")
+@limiter.limit("20 per day;5 per hour")
 def add():
     body = request.get_json(silent=True) or {}
 
@@ -185,6 +187,7 @@ def remove(job_id: str):
 # ── POST /send-now/<job_id> ────────────────────────────────────────────────────
 
 @schedule_bp.post("/send-now/<job_id>")
+@limiter.limit("10 per day;3 per hour")
 def send_now(job_id: str):
     client_tokens = _parse_token_header()
 

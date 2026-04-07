@@ -55,6 +55,21 @@ app.register_blueprint(schedule_bp,    url_prefix="/api/schedule")
 app.register_blueprint(comparison_bp,  url_prefix="/api/comparison")
 
 
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    retry_after = None
+    try:
+        retry_after = int(e.description.split("in")[1].split("second")[0].strip())
+    except Exception:
+        pass
+    from flask import jsonify as _jsonify
+    return _jsonify({
+        "error":       "rate_limit_exceeded",
+        "message":     str(e.description),
+        "retry_after": retry_after,
+    }), 429
+
+
 @app.get("/api/health")
 def health():
     from scheduler import _scheduler, start_scheduler

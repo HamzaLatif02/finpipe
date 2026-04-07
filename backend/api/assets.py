@@ -8,12 +8,14 @@ from flask import Blueprint, jsonify, request
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from explorer import ASSET_CATEGORIES, PERIODS, INTERVALS, validate_ticker
+from extensions import limiter
 
 assets_bp = Blueprint("assets", __name__)
 logger = logging.getLogger(__name__)
 
 
 @assets_bp.get("/categories")
+@limiter.exempt
 def get_categories():
     try:
         categories = {
@@ -33,6 +35,7 @@ def get_categories():
 
 
 @assets_bp.get("/periods")
+@limiter.exempt
 def get_periods():
     try:
         periods = [{"value": value, "label": label} for value, label in PERIODS]
@@ -43,6 +46,7 @@ def get_periods():
 
 
 @assets_bp.get("/intervals")
+@limiter.exempt
 def get_intervals():
     try:
         intervals = [{"value": value, "label": label} for value, label in INTERVALS]
@@ -53,6 +57,7 @@ def get_intervals():
 
 
 @assets_bp.get("/validate")
+@limiter.exempt
 def validate():
     symbol = request.args.get("symbol", "").strip()
     if not symbol:

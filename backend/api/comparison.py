@@ -15,6 +15,7 @@ from comparison_report   import generate_comparison_report  # noqa: E402
 from fetcher import fetch_data                           # noqa: E402
 from cleaner import clean_data                           # noqa: E402
 from db      import insert_prices, insert_info, init_db  # noqa: E402
+from extensions import limiter                           # noqa: E402
 
 comparison_bp = Blueprint("comparison", __name__)
 logger = logging.getLogger(__name__)
@@ -25,6 +26,7 @@ _REQUIRED_CONFIG = {"symbol", "name", "asset_type", "currency", "period", "inter
 
 
 @comparison_bp.post("/run")
+@limiter.limit("15 per day;5 per hour;2 per minute")
 def run():
     body = request.get_json(silent=True) or {}
     config_a = body.get("config_a") or {}
