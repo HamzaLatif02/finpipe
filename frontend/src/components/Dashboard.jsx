@@ -145,7 +145,7 @@ export default function Dashboard({ result, cacheInfo, onReset, onRefresh }) {
             </div>
 
             {/* Action buttons */}
-            <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
+            <div className="fp-dash-actions" style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
               <button
                 onClick={() => setShowSchedule(true)}
                 className="fp-btn-primary"
@@ -247,12 +247,9 @@ export default function Dashboard({ result, cacheInfo, onReset, onRefresh }) {
       )}
 
       <style>{`
-        @media (max-width: 768px) {
-          .dashboard-grid {
-            grid-template-columns: 1fr !important;
-          }
-          .dashboard-grid > div:first-child { grid-column: 1 !important; }
-          .dashboard-grid > div:last-child  { grid-column: 1 !important; }
+        @media (max-width: 767px) {
+          .fp-dash-actions { width: 100%; }
+          .fp-dash-actions button { flex: 1; justify-content: center; }
         }
       `}</style>
     </div>

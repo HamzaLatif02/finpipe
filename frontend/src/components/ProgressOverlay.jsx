@@ -134,7 +134,7 @@ export default function ProgressOverlay({
       minHeight: '60vh',
       animation: 'fp-fade-in var(--t-base) var(--ease)',
     }}>
-      <div className="fp-card" style={{
+      <div className="fp-card fp-overlay-card" style={{
         padding: '48px 40px', maxWidth: '420px', width: '100%',
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 28,
         textAlign: 'center',

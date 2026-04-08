@@ -19,7 +19,7 @@ export default function ReportDownload({ symbol, name, hasPdf }) {
   const filename = `${symbol}_report.pdf`
 
   return (
-    <div className="fp-card" style={{
+    <div className="fp-card fp-report-row" style={{
       padding: '20px 24px',
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       gap: 20, flexWrap: 'wrap',
@@ -52,7 +52,7 @@ export default function ReportDownload({ symbol, name, hasPdf }) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+      <div className="fp-report-btns" style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
         <a
           href={getViewUrl(symbol)}
           target="_blank"

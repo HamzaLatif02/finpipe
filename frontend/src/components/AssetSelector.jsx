@@ -149,7 +149,8 @@ export default function AssetSelector({ onSubmit, isLoading }) {
       {/* ── Category tabs — segmented control ─────────────────────────── */}
       <section>
         <span className="fp-section-label">Asset Category</span>
-        <div className="fp-seg-control">
+        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
+        <div className="fp-seg-control" style={{ minWidth: 'max-content' }}>
           {Object.keys(categories).map(cat => (
             <button
               key={cat}
@@ -159,6 +160,7 @@ export default function AssetSelector({ onSubmit, isLoading }) {
               {cat}
             </button>
           ))}
+        </div>
         </div>
         {activeCategory && (
           <p style={{ marginTop: 8, fontSize: '12px', color: 'var(--text-3)' }}>
@@ -208,7 +210,7 @@ export default function AssetSelector({ onSubmit, isLoading }) {
       <section>
         <span className="fp-section-label">Or Enter a Custom Ticker</span>
         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-          <div style={{ position: 'relative', flex: 1, maxWidth: 280 }}>
+          <div style={{ position: 'relative', flex: 1 }}>
             <Search
               size={14}
               color="var(--text-3)"

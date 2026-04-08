@@ -203,112 +203,180 @@ export default function ScheduleManager({ onClose }) {
           )}
 
           {jobs?.length > 0 && (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <th style={{ textAlign: 'left', padding: '8px 12px 10px 0', fontSize: '10px', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-3)', fontFamily: 'var(--font-body)' }}>Asset</th>
-                  <th style={{ textAlign: 'left', padding: '8px 12px 10px', fontSize: '10px', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-3)', fontFamily: 'var(--font-body)' }}>Frequency</th>
-                  <th style={{ textAlign: 'left', padding: '8px 12px 10px', fontSize: '10px', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-3)', fontFamily: 'var(--font-body)' }}>Next Report</th>
-                  <th style={{ textAlign: 'left', padding: '8px 12px 10px', fontSize: '10px', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-3)', fontFamily: 'var(--font-body)' }}>Email</th>
-                  <th style={{ padding: '8px 0 10px' }} />
-                </tr>
-              </thead>
-              <tbody>
+            <>
+              {/* ── Desktop table ─────────────────────────────────────── */}
+              <div className="fp-sched-table-wrap">
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                      <th style={{ textAlign: 'left', padding: '8px 12px 10px 0', fontSize: '10px', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-3)', fontFamily: 'var(--font-body)' }}>Asset</th>
+                      <th style={{ textAlign: 'left', padding: '8px 12px 10px', fontSize: '10px', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-3)', fontFamily: 'var(--font-body)' }}>Frequency</th>
+                      <th style={{ textAlign: 'left', padding: '8px 12px 10px', fontSize: '10px', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-3)', fontFamily: 'var(--font-body)' }}>Next Report</th>
+                      <th style={{ textAlign: 'left', padding: '8px 12px 10px', fontSize: '10px', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-3)', fontFamily: 'var(--font-body)' }}>Email</th>
+                      <th style={{ padding: '8px 0 10px' }} />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {jobs.map(job => (
+                      <tr
+                        key={job.job_id}
+                        className="fp-table-row"
+                        style={{ borderBottom: '1px solid var(--border-subtle)' }}
+                      >
+                        <td style={{ padding: '12px 12px 12px 0' }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 500, fontSize: '13px', color: 'var(--text-1)' }}>
+                            {job.symbol}
+                          </span>
+                          {job.name && job.name !== job.symbol && (
+                            <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-3)', marginTop: 2 }}>
+                              {job.name}
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ padding: '12px' }}>
+                          <span className="fp-badge fp-badge-neutral" style={{ fontSize: '10px' }}>
+                            {fmtFrequency(job)}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px', fontSize: '12px', color: 'var(--text-2)', fontFamily: 'var(--font-mono)' }}>
+                          {job.next_run_time
+                            ? new Date(job.next_run_time.replace(' ', 'T')).toLocaleString()
+                            : <span style={{ color: 'var(--text-4)' }}>—</span>
+                          }
+                        </td>
+                        <td style={{ padding: '12px', maxWidth: 180 }}>
+                          <span style={{ fontSize: '12px', color: 'var(--text-3)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {job.email}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 0', textAlign: 'right' }}>
+                          <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                            <button
+                              onClick={() => handleSendNow(job)}
+                              disabled={sending === job.job_id || removing === job.job_id}
+                              className="fp-send-btn"
+                              title="Send report now"
+                            >
+                              {sending === job.job_id ? (
+                                <svg className="fp-spinner" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                  <circle cx="6" cy="6" r="4.5" stroke="var(--border-bright)" strokeWidth="1.5" />
+                                  <path d="M6 1.5a4.5 4.5 0 0 1 4.5 4.5" stroke="var(--positive)" strokeWidth="1.5" strokeLinecap="round" />
+                                </svg>
+                              ) : <Send size={12} />}
+                              Send now
+                            </button>
+                            <button
+                              onClick={() => handleRemove(job)}
+                              disabled={removing === job.job_id || sending === job.job_id}
+                              className="fp-cancel-btn"
+                            >
+                              {removing === job.job_id ? (
+                                <svg className="fp-spinner" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                  <circle cx="6" cy="6" r="4.5" stroke="var(--border-bright)" strokeWidth="1.5" />
+                                  <path d="M6 1.5a4.5 4.5 0 0 1 4.5 4.5" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" />
+                                </svg>
+                              ) : <Trash2 size={12} />}
+                              Cancel
+                            </button>
+                          </div>
+                          {rowMessages[job.job_id] && (
+                            <div style={{ fontSize: '11px', color: 'var(--positive)', marginTop: 5, textAlign: 'right', lineHeight: 1.4 }}>
+                              {rowMessages[job.job_id]}
+                            </div>
+                          )}
+                          {rowErrors[job.job_id] && (
+                            <div style={{ fontSize: '11px', color: 'var(--negative)', marginTop: 5, maxWidth: 200, textAlign: 'right', lineHeight: 1.4 }}>
+                              {rowErrors[job.job_id]}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* ── Mobile cards ──────────────────────────────────────── */}
+              <div className="fp-sched-cards" style={{ flexDirection: 'column', gap: 10, display: 'none' }}>
                 {jobs.map(job => (
-                  <tr
-                    key={job.job_id}
-                    className="fp-table-row"
-                    style={{ borderBottom: '1px solid var(--border-subtle)' }}
-                  >
-                    <td style={{ padding: '12px 12px 12px 0' }}>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 500, fontSize: '13px', color: 'var(--text-1)' }}>
-                        {job.symbol}
-                      </span>
-                      {job.name && job.name !== job.symbol && (
-                        <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-3)', marginTop: 2 }}>
-                          {job.name}
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ padding: '12px' }}>
-                      <span className="fp-badge fp-badge-neutral" style={{ fontSize: '10px' }}>
-                        {fmtFrequency(job)}
-                      </span>
-                    </td>
-                    <td style={{ padding: '12px', fontSize: '12px', color: 'var(--text-2)', fontFamily: 'var(--font-mono)' }}>
-                      {job.next_run_time
-                        ? new Date(job.next_run_time.replace(' ', 'T')).toLocaleString()
-                        : <span style={{ color: 'var(--text-4)' }}>—</span>
-                      }
-                    </td>
-                    <td style={{ padding: '12px', maxWidth: 180 }}>
-                      <span style={{ fontSize: '12px', color: 'var(--text-3)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {job.email}
-                      </span>
-                    </td>
-                    <td style={{ padding: '12px 0', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                        {/* Send now */}
-                        <button
-                          onClick={() => handleSendNow(job)}
-                          disabled={sending === job.job_id || removing === job.job_id}
-                          className="fp-send-btn"
-                          title="Send report now"
-                        >
-                          {sending === job.job_id ? (
-                            <svg className="fp-spinner" width="12" height="12" viewBox="0 0 12 12" fill="none">
-                              <circle cx="6" cy="6" r="4.5" stroke="var(--border-bright)" strokeWidth="1.5" />
-                              <path d="M6 1.5a4.5 4.5 0 0 1 4.5 4.5" stroke="var(--positive)" strokeWidth="1.5" strokeLinecap="round" />
-                            </svg>
-                          ) : (
-                            <Send size={12} />
-                          )}
-                          Send now
-                        </button>
-
-                        {/* Cancel */}
-                        <button
-                          onClick={() => handleRemove(job)}
-                          disabled={removing === job.job_id || sending === job.job_id}
-                          className="fp-cancel-btn"
-                        >
-                          {removing === job.job_id ? (
-                            <svg className="fp-spinner" width="12" height="12" viewBox="0 0 12 12" fill="none">
-                              <circle cx="6" cy="6" r="4.5" stroke="var(--border-bright)" strokeWidth="1.5" />
-                              <path d="M6 1.5a4.5 4.5 0 0 1 4.5 4.5" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" />
-                            </svg>
-                          ) : (
-                            <Trash2 size={12} />
-                          )}
-                          Cancel
-                        </button>
+                  <div key={job.job_id} style={{
+                    background: 'var(--bg-raised)', border: '1px solid var(--border-default)',
+                    borderRadius: 'var(--r-lg)', padding: '14px 16px',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 500, fontSize: '14px', color: 'var(--text-1)' }}>
+                            {job.symbol}
+                          </span>
+                          <span className="fp-badge fp-badge-neutral" style={{ fontSize: '10px' }}>
+                            {fmtFrequency(job)}
+                          </span>
+                        </div>
+                        {job.name && job.name !== job.symbol && (
+                          <span style={{ fontSize: '12px', color: 'var(--text-3)', display: 'block', marginTop: 2 }}>
+                            {job.name}
+                          </span>
+                        )}
                       </div>
-
-                      {/* Inline success message */}
-                      {rowMessages[job.job_id] && (
-                        <div style={{
-                          fontSize: '11px', color: 'var(--positive)',
-                          marginTop: 5, textAlign: 'right', lineHeight: 1.4,
-                        }}>
-                          {rowMessages[job.job_id]}
-                        </div>
-                      )}
-
-                      {/* Inline error message */}
-                      {rowErrors[job.job_id] && (
-                        <div style={{
-                          fontSize: '11px', color: 'var(--negative)',
-                          marginTop: 5, maxWidth: 200, textAlign: 'right',
-                          lineHeight: 1.4,
-                        }}>
-                          {rowErrors[job.job_id]}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
+                      <div style={{ fontSize: '12px', color: 'var(--text-3)' }}>
+                        <span style={{ color: 'var(--text-4)', marginRight: 6 }}>Email</span>
+                        <span style={{ color: 'var(--text-2)' }}>{job.email}</span>
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>
+                        <span style={{ color: 'var(--text-4)', marginRight: 6, fontFamily: 'var(--font-body)' }}>Next</span>
+                        {job.next_run_time
+                          ? new Date(job.next_run_time.replace(' ', 'T')).toLocaleString()
+                          : '—'
+                        }
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        onClick={() => handleSendNow(job)}
+                        disabled={sending === job.job_id || removing === job.job_id}
+                        className="fp-send-btn"
+                        style={{ flex: 1, justifyContent: 'center', padding: '10px 8px' }}
+                      >
+                        {sending === job.job_id ? (
+                          <svg className="fp-spinner" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                            <circle cx="6" cy="6" r="4.5" stroke="var(--border-bright)" strokeWidth="1.5" />
+                            <path d="M6 1.5a4.5 4.5 0 0 1 4.5 4.5" stroke="var(--positive)" strokeWidth="1.5" strokeLinecap="round" />
+                          </svg>
+                        ) : <Send size={12} />}
+                        Send now
+                      </button>
+                      <button
+                        onClick={() => handleRemove(job)}
+                        disabled={removing === job.job_id || sending === job.job_id}
+                        className="fp-cancel-btn"
+                        style={{ flex: 1, justifyContent: 'center', padding: '10px 8px' }}
+                      >
+                        {removing === job.job_id ? (
+                          <svg className="fp-spinner" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                            <circle cx="6" cy="6" r="4.5" stroke="var(--border-bright)" strokeWidth="1.5" />
+                            <path d="M6 1.5a4.5 4.5 0 0 1 4.5 4.5" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" />
+                          </svg>
+                        ) : <Trash2 size={12} />}
+                        Cancel
+                      </button>
+                    </div>
+                    {rowMessages[job.job_id] && (
+                      <div style={{ fontSize: '11px', color: 'var(--positive)', marginTop: 8, lineHeight: 1.4 }}>
+                        {rowMessages[job.job_id]}
+                      </div>
+                    )}
+                    {rowErrors[job.job_id] && (
+                      <div style={{ fontSize: '11px', color: 'var(--negative)', marginTop: 8, lineHeight: 1.4 }}>
+                        {rowErrors[job.job_id]}
+                      </div>
+                    )}
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            </>
           )}
           {/* ── Pending / awaiting confirmation ─────────────────────── */}
           {pendingJobs.length > 0 && (

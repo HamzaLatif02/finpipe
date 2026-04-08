@@ -135,7 +135,7 @@ export default function MetricsPanel({ summaryStats = {}, assetInfo = {}, symbol
       </div>
 
       {/* ── Metric cards grid ──────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+      <div className="fp-metrics-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         {METRIC_KEYS.map((key, i) => {
           const value   = summaryStats[key] ?? null
           const fmtd    = fmt(value, key)

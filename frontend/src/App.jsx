@@ -272,7 +272,7 @@ export default function App() {
         borderBottom: '1px solid var(--border-subtle)',
         position: 'sticky', top: 0, zIndex: 40,
       }}>
-        <div style={{
+        <div className="fp-nav-container" style={{
           maxWidth: 1200, margin: '0 auto', padding: '0 24px',
           height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
@@ -371,7 +371,7 @@ export default function App() {
       )}
 
       {/* ── Main content ───────────────────────────────────────────────── */}
-      <main style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
+      <main className="fp-main" style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
 
         {activePage === 'compare' ? (
           <div key="compare" style={{ animation: 'fp-fade-up 0.28s var(--ease) both' }}>
@@ -394,7 +394,7 @@ export default function App() {
                     Select an asset, configure the date range, and generate charts and metrics.
                   </p>
                 </div>
-                <div className="fp-card" style={{ padding: '32px 28px' }}>
+                <div className="fp-card fp-selector-card" style={{ padding: '32px 28px' }}>
                   <AssetSelector onSubmit={handleSubmit} isLoading={false} />
                 </div>
               </div>

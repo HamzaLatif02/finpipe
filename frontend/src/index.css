@@ -72,9 +72,12 @@ html, body {
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 * { box-sizing: border-box; }
+
+img, svg { max-width: 100%; }
 
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -96,6 +99,11 @@ html, body {
 @keyframes fp-slide-right {
   from { transform: translateX(100%); }
   to   { transform: translateX(0); }
+}
+
+@keyframes fp-slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
 }
 
 @keyframes fp-shimmer {
@@ -603,4 +611,123 @@ select.fp-input option {
   .fp-comparison-grid {
     grid-template-columns: 1fr !important;
   }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MOBILE-FIRST RESPONSIVE OVERRIDES
+   ══════════════════════════════════════════════════════════════ */
+
+/* Touch targets — all interactive elements ≥ 44px tall */
+.fp-btn-accent,
+.fp-btn-primary,
+.fp-btn-ghost,
+.fp-nav-btn {
+  min-height: 36px;
+}
+
+@media (max-width: 639px) {
+  .fp-btn-accent,
+  .fp-btn-primary,
+  .fp-btn-ghost,
+  .fp-nav-btn {
+    min-height: 44px;
+  }
+
+  /* ── Nav ── */
+  .fp-nav-container {
+    padding: 0 16px !important;
+  }
+
+  /* ── Main content padding ── */
+  .fp-main {
+    padding: 20px 16px !important;
+  }
+
+  /* ── Modal → bottom sheet ── */
+  .fp-modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .fp-modal-panel {
+    max-width: 100% !important;
+    border-radius: var(--r-2xl) var(--r-2xl) 0 0 !important;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    max-height: 88dvh;
+    animation: fp-slide-up var(--t-base) var(--ease) !important;
+  }
+  /* Handle bar for bottom sheet */
+  .fp-modal-panel::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: var(--border-bright);
+    border-radius: 2px;
+    margin: 10px auto 0;
+    flex-shrink: 0;
+  }
+
+  /* ── Drawer → full width ── */
+  .fp-drawer-panel {
+    max-width: 100% !important;
+    border-left: none;
+    border-top: 1px solid var(--border-default);
+  }
+  .fp-drawer-backdrop {
+    align-items: flex-end;
+    justify-content: stretch;
+  }
+
+  /* ── Dashboard grid → single column ── */
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .dashboard-grid > div {
+    grid-column: 1 !important;
+  }
+
+  /* ── Metrics grid → single column on very small screens ── */
+  .fp-metrics-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── Report download row → stack ── */
+  .fp-report-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+  .fp-report-btns {
+    width: 100%;
+  }
+  .fp-report-btns a {
+    flex: 1;
+    justify-content: center;
+  }
+
+  /* ── Schedule table → hide; cards → show ── */
+  .fp-sched-table-wrap { display: none !important; }
+  .fp-sched-cards      { display: flex !important; }
+
+  /* ── Overlay card → full width ── */
+  .fp-overlay-card {
+    max-width: 100% !important;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    min-height: 100dvh;
+    justify-content: center;
+  }
+}
+
+@media (min-width: 640px) {
+  /* ── Schedule: show table, hide cards ── */
+  .fp-sched-table-wrap { display: block !important; }
+  .fp-sched-cards      { display: none !important; }
+}
+
+/* ── Selector card: tighter padding on small screens ── */
+@media (max-width: 479px) {
+  .fp-selector-card { padding: 20px 16px !important; }
 }
