@@ -1,246 +1,484 @@
-# Financial Reporting Pipeline
+# Financial Pipeline
 
-[![CI](https://github.com/HamzaLatif02/finpipe/actions/workflows/ci.yml/badge.svg)](https://github.com/HamzaLatif02/finpipe/actions/workflows/ci.yml)
-[![Lint](https://github.com/HamzaLatif02/finpipe/actions/workflows/lint.yml/badge.svg)](https://github.com/HamzaLatif02/finpipe/actions/workflows/lint.yml)
-[![codecov](https://codecov.io/gh/HamzaLatif02/finpipe/branch/main/graph/badge.svg)](https://codecov.io/gh/HamzaLatif02/finpipe)
-[![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/release/python-3110/)
-[![Flask](https://img.shields.io/badge/flask-3.x-green.svg)](https://flask.palletsprojects.com/)
-[![Docker](https://img.shields.io/badge/docker-ready-blue?logo=docker)](https://github.com/HamzaLatif02/finpipe/blob/main/DOCKER.md)
+*Automated financial analysis and reporting for any Yahoo Finance asset — stocks, ETFs, forex, crypto and commodities. No API key required.*
 
-A full-stack web application that runs a complete financial data pipeline for any asset available on Yahoo Finance. Select a ticker, configure a time period and interval, and the app fetches price history, computes key metrics, generates six analytical charts, and produces a downloadable PDF report — all from a single form submission. Reports can also be delivered automatically by email on a daily, weekly, or monthly schedule configured entirely from the browser.
+[![CI](https://github.com/HamzaLatif02/finpipe/actions/workflows/ci.yml/badge.svg)](https://github.com/HamzaLatif02/finpipe/actions/workflows/ci.yml) [![Lint](https://github.com/HamzaLatif02/finpipe/actions/workflows/lint.yml/badge.svg)](https://github.com/HamzaLatif02/finpipe/actions/workflows/lint.yml) [![codecov](https://codecov.io/gh/HamzaLatif02/finpipe/branch/main/graph/badge.svg)](https://codecov.io/gh/HamzaLatif02/finpipe) [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/) [![Flask](https://img.shields.io/badge/flask-3.x-green.svg)](https://flask.palletsprojects.com/) [![Docker](https://img.shields.io/badge/docker-ready-blue?logo=docker)](./DOCKER.md) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Built with Flask and React. Developed with [Claude Code](https://claude.ai/code).
+**[Live Demo](https://finpipe.xyz)** · **[API Docs](https://finpipe.xyz/docs)** · **[Original Terminal Pipeline](https://github.com/HamzaLatif02/financial_reporting_pipeline)**
+
+![Dashboard](docs/screenshots/dashboard.png)
+*Screenshot: main dashboard showing AAPL analysis with metrics and candlestick chart*
 
 ---
 
-## Live Demo
+## Overview
 
-[Live Demo](https://financial-pipeline-webapp.onrender.com/)
+Financial Pipeline is a full-stack web application that runs a complete quantitative analysis pipeline for any asset on Yahoo Finance. It started life as a [terminal-based pipeline script](https://github.com/HamzaLatif02/financial_reporting_pipeline) and was extended into a production web application. Pick any ticker — stock, ETF, index, forex pair, cryptocurrency, or commodity — set the period and interval, and the app fetches price history, computes eight key performance metrics, generates six analytical charts, and produces a downloadable PDF report. Everything runs from a browser with no account, no API key, and no installation required.
 
----
-
-## Screenshots
-
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/f2944ffe-4788-4ec2-ba18-b07f136c9402"" width="1200"/>
-</p>
-<p align="center"><i>Figure 1: Parameters selection for analysis.</i></p>
-
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/15d975f6-ec79-467a-96c4-a895acaf2010" width="1200"/>
-</p>
-<p align="center"><i>Figure 2: Analysis results.</i></p>
-
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/03146ae0-2b0b-49c8-a262-c0778ded97d8" width="1200"/>
-</p>
-<p align="center"><i>Figure 3: Schedule report menu.</i></p>
-
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/efaa8aca-cfef-4666-a748-c56811d03fe9" width="1300"/>
-</p>
-<p align="center"><i>Figure 4: PDF Report sample.</i></p>
+There are two audiences for this project. Individual investors and finance enthusiasts get professional-grade analysis — Sharpe ratio, maximum drawdown, annualised volatility, moving average overlays, monthly returns heatmaps — without needing a Bloomberg terminal. Technical reviewers and hiring managers get a full-stack project covering the complete engineering stack: ETL data pipeline, REST API, WebSocket real-time progress, report generation, scheduled email delivery, Docker containerisation, and CI/CD — all deployed and publicly accessible.
 
 ---
 
 ## Features
 
-- **30+ pre-loaded assets** across five categories: Stocks, ETFs, Crypto, Forex, and Commodities
-- **Custom ticker support** — enter any Yahoo Finance symbol with live validation before running
-- **Configurable period and interval** — from 1 month to 5 years, at daily, weekly, or monthly granularity
-- **Key financial metrics** — total return, annualised return, Sharpe ratio, max drawdown, volatility, best and worst single-day returns, average daily volume
-- **Six analytical charts** — candlestick, price with moving averages, cumulative return, drawdown, monthly returns heatmap, and a summary statistics table
-- **Downloadable PDF report** — all metrics and charts compiled into a single document
-- **Automated email delivery** — schedule reports to arrive daily, weekly, or monthly via Gmail SMTP
-- **Schedule management** — view and cancel active scheduled reports from the browser
-- **Run history** — reload charts and reports from any previous pipeline run without re-fetching data
+**Data & Analysis**
+- Browse 30+ pre-loaded assets across five categories: Stocks, ETFs & Indices, Forex, Cryptocurrency, Commodities & Macro
+- Enter any custom Yahoo Finance ticker with live server-side validation before running
+- Configurable time period (1 month to maximum available history) and interval (daily, weekly, monthly)
+- Custom date range picker for precise historical windows
+- Eight quantitative metrics: total return, annualised return, Sharpe ratio, maximum drawdown, annualised volatility, best single day, worst single day, average daily volume
+- Six charts per run: candlestick with volume, price with MA20/MA50/MA200 overlays, cumulative return, drawdown curve, monthly returns heatmap, and summary statistics table
+- AI-powered chart descriptions generated by Claude Haiku and embedded directly in each PDF report
+
+**Comparison Mode**
+- Select any two assets and run a side-by-side comparison over the same period
+- Normalised price performance chart — both assets rebased to 100 at the first overlapping trading date
+- Pearson correlation coefficient with plain-English label (Strong Positive Correlation / Weakly Correlated / Strong Negative Correlation, etc.)
+- Side-by-side performance metrics table with a winner column highlighting the outperformer for each metric
+- Correlation scatter plot coloured by quadrant
+- Dual drawdown chart with transparent fill overlays for easy visual comparison
+- Combined comparison PDF report covering both assets in a single document
+
+**Reporting & Scheduling**
+- Downloadable PDF report with cover page, metrics summary, all six charts with AI descriptions, and disclaimer
+- Inline PDF viewer — view the report in a new browser tab without downloading
+- Schedule automated email delivery on a daily, weekly, or monthly cron with configurable time (London timezone)
+- Double opt-in confirmation — every new scheduled job requires an email confirmation click before it activates
+- Email recovery flow to restore access after clearing browser local storage
+- Send Now button for immediate on-demand delivery of any active scheduled job
+- Scheduled reports sent from reports@finpipe.xyz via Resend
+
+**Engineering**
+- Real-time WebSocket progress bar across seven named pipeline stages with live percentage; automatic HTTP polling fallback if WebSocket is unavailable
+- Report caching with a 1-hour TTL — identical requests are served from cache in under a second, saving 15–30 seconds per run
+- Rate limiting on pipeline endpoints (10 runs/hour, 3/minute per IP) via Flask-Limiter; 429 responses include a retry-after countdown in the UI
+- Interactive OpenAPI 3.0 documentation at `/docs` built with Flask-Smorest — every endpoint browsable and testable from the browser
+- Fully responsive mobile layout with scrollable category tabs, bottom-sheet modals, stacked metrics grid, and full-screen progress overlay
+- Docker containerisation — the entire app runs with a single `docker compose up --build`
+- GitHub Actions CI running pytest, coverage upload to Codecov, flake8 lint, and Docker image build validation on every push
+- Deployed on Render with a PostgreSQL database for scheduled job persistence across restarts
+
+---
+
+## Screenshots
+
+> **Note for contributors:** Replace placeholder images by adding screenshots to `docs/screenshots/`. Screenshots should be PNG, 1280×800px for desktop views and 390×844px for mobile. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+![Asset Selector](docs/screenshots/asset-selector.png)
+*Asset selector — browse five categories or enter a custom ticker with live validation*
+
+![Pipeline Progress](docs/screenshots/progress.png)
+*Real-time WebSocket progress bar with seven named stages and live percentage*
+
+![Dashboard Metrics](docs/screenshots/dashboard-metrics.png)
+*Dashboard — eight quantitative metrics with positive/negative colour coding*
+
+![Dashboard Charts](docs/screenshots/dashboard-charts.png)
+*Tabbed chart viewer — candlestick with volume, moving averages, drawdown, monthly heatmap*
+
+![Comparison Mode](docs/screenshots/comparison.png)
+*Comparison mode — AAPL vs MSFT with correlation score and side-by-side metrics*
+
+![PDF Report](docs/screenshots/report.png)
+*Generated PDF report with AI-written chart descriptions*
+
+![Schedule Modal](docs/screenshots/schedule-modal.png)
+*Schedule automated email reports — daily, weekly or monthly with double opt-in*
+
+![Mobile View](docs/screenshots/mobile.png)
+*Mobile layout — scrollable category tabs and bottom-sheet modal at 375px*
+
+![API Docs](docs/screenshots/api-docs.png)
+*Interactive OpenAPI 3.0 documentation at /docs*
 
 ---
 
 ## Tech Stack
 
-### Backend
+**Backend**
 
-| Library | Purpose |
+| Technology | Purpose |
 |---|---|
-| Flask | HTTP server and REST API |
-| APScheduler | Background job scheduling with cron triggers |
-| yfinance | Market data from Yahoo Finance |
-| pandas | Data cleaning and quantitative analysis |
-| matplotlib / mplfinance | Chart generation |
-| fpdf2 | PDF report generation |
-| SQLite | Run history and asset metadata storage |
-| smtplib | Email delivery via SMTP |
-| gunicorn | Production WSGI server |
+| Python 3.11 | Core language |
+| Flask 3 | REST API framework |
+| Flask-SocketIO | WebSocket real-time progress events |
+| Flask-Smorest | OpenAPI 3.0 documentation at `/docs` |
+| Flask-Limiter | Rate limiting — 10 pipeline runs/hour/IP |
+| yfinance | Yahoo Finance data — stocks, ETFs, forex, crypto, commodities |
+| pandas | Data cleaning, transformation, and quantitative analysis |
+| matplotlib / mplfinance | Chart generation — candlestick, MA overlays, heatmap, drawdown |
+| fpdf2 + DejaVu fonts | PDF report generation with full Unicode support |
+| SQLite | Price history, report cache, and run metadata |
+| PostgreSQL (psycopg2) | Scheduled job persistence across server restarts |
+| APScheduler | Cron-based report scheduling running in-process |
+| Resend | Transactional email delivery |
+| Anthropic Claude Haiku | AI-generated chart descriptions embedded in PDF reports |
+| Gunicorn + eventlet | Production WSGI server with async workers for WebSocket support |
 
-### Frontend
+**Frontend**
 
-| Library | Purpose |
+| Technology | Purpose |
 |---|---|
-| React | UI framework |
-| Vite | Build tool and dev server |
-| Tailwind CSS | Styling |
-| Axios | HTTP client |
-| lucide-react | Icons |
+| React 19 | Component-based UI |
+| Vite 8 | Fast build tooling with code splitting |
+| Tailwind CSS 4 | Utility-first responsive styling |
+| socket.io-client | WebSocket connection for live pipeline progress |
+| Axios | HTTP requests to Flask API |
+| lucide-react | Icon library |
+| Radix UI | Accessible primitive components |
+
+**Infrastructure**
+
+| Technology | Purpose |
+|---|---|
+| Render | Cloud deployment — web service and PostgreSQL database |
+| Docker | Multi-stage containerisation for portable local deployment |
+| GitHub Actions | CI: pytest, coverage, flake8 lint, Docker build validation |
+| Codecov | Coverage reporting and PR badge |
+| Resend | Email delivery infrastructure (reports@finpipe.xyz) |
 
 ---
 
-## Local Development
+## Architecture
 
-### Prerequisites
-
-- Python 3.11+
-- Node.js 18+
-- A Gmail account with an [App Password](https://support.google.com/accounts/answer/185833) (required only for email features)
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/HamzaLatif02/financial_reporting_pipeline_webapp.git
-cd financial_reporting_pipeline_webapp
-```
-
-### 2. Set up the Python environment
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-### 3. Configure environment variables
-
-Create a `.env` file in the project root:
+Flask serves both the REST API and the compiled React bundle from a single process in production — no separate Node.js runtime or reverse proxy is required. The analysis pipeline runs in a background thread, emitting WebSocket progress events to the browser as each stage completes. APScheduler runs inside the same Flask process and loads all active recurring jobs from PostgreSQL at startup, so scheduled reports survive server restarts and redeployments without any separate worker process. All generated files — charts, PDFs, and the SQLite database — are written to a `data/` directory which is mounted as a Docker volume in production, decoupling generated artefacts from the application container.
 
 ```
-FLASK_ENV=development
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your_gmail_address@gmail.com
-SMTP_PASSWORD=your_16_char_app_password
-REPORT_RECIPIENT=recipient@example.com
+finpipe/
+├── backend/                    Flask API
+│   ├── app.py                  App factory, SocketIO, blueprints, static serving
+│   ├── socket_handlers.py      WebSocket event handlers (pipeline progress)
+│   ├── scheduler.py            APScheduler job management and email dispatch
+│   ├── progress.py             Progress event emission helpers
+│   ├── pg_jobs.py              PostgreSQL job persistence layer
+│   ├── tasks.py                Background pipeline task runner
+│   ├── docs_config.py          OpenAPI metadata for Flask-Smorest
+│   ├── extensions.py           Flask-Limiter singleton
+│   ├── schemas.py              Marshmallow schemas for OpenAPI response docs
+│   └── api/
+│       ├── assets.py           GET  /api/assets/*
+│       ├── pipeline.py         POST /api/pipeline/run
+│       ├── comparison.py       POST /api/comparison/run
+│       ├── schedule.py         POST /api/schedule/*
+│       ├── reports.py          GET  /api/reports/*
+│       └── cache.py            GET/DELETE /api/cache/*
+├── frontend/
+│   └── src/
+│       ├── App.jsx             Root component, navigation, pipeline orchestration
+│       ├── pages/
+│       │   └── Compare.jsx     Asset comparison page
+│       ├── hooks/
+│       │   └── usePipelineSocket.js  WebSocket hook with HTTP fallback
+│       ├── components/
+│       │   ├── AssetSelector.jsx       Asset selection form
+│       │   ├── Dashboard.jsx           Results header and layout
+│       │   ├── MetricsPanel.jsx        8-metric card grid
+│       │   ├── ChartViewer.jsx         Tabbed chart display
+│       │   ├── ReportDownload.jsx      PDF view/download buttons
+│       │   ├── ProgressOverlay.jsx     Loading state and rate limit UI
+│       │   ├── ScheduleModal.jsx       Schedule creation form
+│       │   ├── ScheduleManager.jsx     Active schedules drawer
+│       │   ├── DateRangePicker.jsx     Custom date range inputs
+│       │   ├── ErrorBoundary.jsx       React error boundary
+│       │   └── comparison/
+│       │       ├── AssetPairSelector.jsx
+│       │       ├── ComparisonDashboard.jsx
+│       │       ├── ComparisonChartViewer.jsx
+│       │       └── ComparisonMetricsTable.jsx
+│       ├── api/
+│       │   └── client.js       Axios + Socket.IO client layer
+│       └── utils/
+│           └── tokenStore.js   Per-job token storage in localStorage
+├── fetcher.py                  yfinance data ingestion
+├── cleaner.py                  pandas data cleaning and normalisation
+├── analysis.py                 Quantitative analysis (return, Sharpe, drawdown…)
+├── charts.py                   Chart generation (matplotlib / mplfinance)
+├── report.py                   PDF report generation (fpdf2)
+├── chart_analyst.py            Claude AI chart description generation
+├── comparison_analysis.py      Two-asset comparison logic and correlation
+├── comparison_charts.py        Comparison chart generation
+├── comparison_report.py        Comparison PDF generation
+├── db.py                       SQLite operations, caching, and run history
+├── config.py                   Asset categories and example tickers
+├── explorer.py                 Interactive terminal asset selection CLI
+├── fonts/                      DejaVu Unicode fonts for PDF generation
+├── tests/                      103 pytest unit tests
+├── scripts/
+│   └── docker-start.sh         Container startup — DB init + gunicorn
+├── .github/workflows/
+│   ├── ci.yml                  Test, coverage, and Docker build CI
+│   └── lint.yml                flake8 + black + isort lint CI
+├── Dockerfile                  Multi-stage production image
+├── docker-compose.yml          Local development compose
+├── docker-compose.prod.yml     Production compose with named volume
+├── render.yaml                 Render deployment configuration
+└── .env.example                Environment variable template
 ```
-
-`SMTP_USER` and `SMTP_PASSWORD` are only required if you use the email or scheduling features.
-
-### 4. Start the Flask backend
-
-```bash
-cd backend
-python app.py
-```
-
-The API is available at `http://localhost:5001`.
-
-### 5. Start the React frontend
-
-In a second terminal:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Open `http://localhost:5173`. The Vite dev server proxies all `/api` requests to the Flask backend.
 
 ---
 
-## Docker
+## Quick Start
 
-Run the entire app with a single command:
+### Option A — Live demo (no setup required)
+
+Visit **[finpipe.xyz](https://finpipe.xyz)** — no account, no API key, no installation.
+
+### Option B — Docker (recommended for local use)
+
+Requires: [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 
 ```bash
+# Clone
 git clone https://github.com/HamzaLatif02/finpipe.git
 cd finpipe
-cp .env.example .env   # fill in your credentials
+
+# Configure (at minimum set SECRET_KEY)
+cp .env.example .env
+
+# Build and run (takes 3–5 min on first build, ~30 s after)
 docker compose up --build
+
+# Open the app
+open http://localhost:8000
 ```
 
-Then open [http://localhost:8000](http://localhost:8000).
+### Option C — Manual local setup
 
-See [DOCKER.md](DOCKER.md) for full Docker documentation including `docker run` usage, environment variables, and data persistence.
+Requires: Python 3.11+, Node.js 20+
+
+```bash
+# Clone
+git clone https://github.com/HamzaLatif02/finpipe.git
+cd finpipe
+
+# Python environment
+python3 -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+
+# Frontend build
+cd frontend && npm install && npm run build && cd ..
+
+# Environment
+cp .env.example .env
+# Edit .env — add your credentials
+
+# Start Flask (serves API + compiled React build)
+cd backend && python app.py
+```
+
+Open [http://localhost:5001](http://localhost:5001)
+
+---
+
+## Environment Variables
+
+Copy `.env.example` and fill in the values:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Required | Description |
+|---|---|---|
+| `SECRET_KEY` | **Yes** | Flask session secret. Generate: `python3 -c "import secrets; print(secrets.token_urlsafe(32))"` |
+| `FLASK_ENV` | **Yes** | `production` in production, `development` locally |
+| `ANTHROPIC_API_KEY` | No | Enables AI chart descriptions in PDF reports. Get from [console.anthropic.com](https://console.anthropic.com). Claude Haiku is used — free tier is sufficient for testing. |
+| `RESEND_API_KEY` | No | Enables scheduled email report delivery. Get from [resend.com](https://resend.com). Free tier: 3,000 emails/month. |
+| `DATABASE_URL` | No | PostgreSQL connection string. Required for scheduled jobs to survive server restarts. Render provides one free. |
+| `RATELIMIT_STORAGE_URI` | No | Rate limit backend. Default: `memory://`. Use a Redis URL for multi-worker deployments. |
+| `RENDER_EXTERNAL_URL` | No | Public URL of the deployed app — used in confirmation email links. e.g. `https://finpipe.xyz` |
+| `ADMIN_TOKEN` | No | Secret for admin-only cache endpoints (`X-Admin-Token` header). |
+
+> **Never commit `.env` to git.** It is listed in `.gitignore`. For Render deployment, set variables in the Render dashboard under **Environment**.
+
+---
+
+## How to Run
+
+### Web app
+
+```bash
+# Development: Flask API + React dev server (hot reload)
+cd backend && python app.py          # Terminal 1 — Flask on :5001
+cd frontend && npm run dev           # Terminal 2 — Vite on :5173
+
+# Production: Flask serves compiled React build
+cd frontend && npm run build         # Build once
+cd backend && python app.py          # Serves everything on :5001
+```
+
+### Tests
+
+```bash
+# Run all unit tests (no external services required)
+pytest tests/ -m unit -v
+
+# With coverage report
+pytest tests/ -m unit \
+  --cov=. \
+  --cov-report=term-missing \
+  --cov-omit="tests/*,frontend/*,.venv/*"
+```
+
+### Docker
+
+```bash
+docker compose up --build    # Build and start
+docker compose up            # Start (after first build)
+docker compose down          # Stop
+docker compose logs -f       # Tail logs
+docker build -t financial-pipeline:latest .   # Build image only
+```
+
+---
+
+## API Reference
+
+Interactive documentation is at **[finpipe.xyz/docs](https://finpipe.xyz/docs)** — built with Flask-Smorest and OpenAPI 3.0. Every endpoint can be browsed and tested directly in the browser.
+
+| Method | Endpoint | Description | Rate Limit |
+|---|---|---|---|
+| `GET` | `/api/health` | Health check — confirms scheduler is running | None |
+| `GET` | `/api/assets/categories` | All asset categories with example tickers | None |
+| `GET` | `/api/assets/validate?symbol=` | Validate a ticker against Yahoo Finance | None |
+| `GET` | `/api/assets/periods` | Available time periods | None |
+| `GET` | `/api/assets/intervals` | Available intervals | None |
+| `POST` | `/api/pipeline/run` | Run full analysis pipeline for one asset | 10/hour, 3/min |
+| `GET` | `/api/pipeline/status` | List of previous pipeline runs | None |
+| `POST` | `/api/comparison/run` | Side-by-side comparison of two assets | 5/hour, 2/min |
+| `GET` | `/api/reports/view/<symbol>` | View PDF report inline | None |
+| `GET` | `/api/reports/pdf/<symbol>` | Download PDF report | None |
+| `GET` | `/api/reports/charts/<filename>` | Serve a chart image | None |
+| `POST` | `/api/schedule/add` | Create a new scheduled report (triggers confirmation email) | 5/hour |
+| `GET` | `/api/schedule/list` | List confirmed scheduled jobs for this user | None |
+| `DELETE` | `/api/schedule/remove/<id>` | Cancel a scheduled job | None |
+| `POST` | `/api/schedule/send-now/<id>` | Trigger immediate report delivery | 3/hour |
+| `GET` | `/api/schedule/confirm` | Activate a job via confirmation token | None |
+| `GET` | `/api/cache/status` | List all active cache entries | None |
+| `DELETE` | `/api/cache/purge` | Purge expired cache entries (admin) | None |
+| `DELETE` | `/api/cache/invalidate/<key>` | Delete a specific cache entry (admin) | None |
+
+> All pipeline results are cached for 1 hour. Pass `"bypass_cache": true` in the request body to force a fresh run.
+
+---
+
+## Example Assets
+
+| Category | Ticker | Name | Why interesting |
+|---|---|---|---|
+| Stocks | `AAPL` | Apple Inc. | World's largest company by market cap |
+| Stocks | `NVDA` | Nvidia Corp. | AI chip leader, extreme recent volatility |
+| Stocks | `LLOY.L` | Lloyds Banking Group | UK blue chip on the LSE |
+| ETFs & Indices | `SPY` | SPDR S&P 500 ETF | Most traded ETF in the world |
+| ETFs & Indices | `^FTSE` | FTSE 100 Index | UK market benchmark |
+| ETFs & Indices | `VWRL.L` | Vanguard FTSE All-World | Globally diversified ETF |
+| Forex | `GBPUSD=X` | British Pound / US Dollar | Most traded GBP pair |
+| Forex | `EURUSD=X` | Euro / US Dollar | World's most traded currency pair |
+| Cryptocurrency | `BTC-USD` | Bitcoin | The original cryptocurrency |
+| Cryptocurrency | `ETH-USD` | Ethereum | Smart contract platform |
+| Commodities | `GC=F` | Gold Futures | Classic safe-haven asset |
+| Commodities | `^TNX` | US 10-Year Treasury Yield | Key macro indicator |
+
+---
+
+## Metrics Explained
+
+| Metric | Definition |
+|---|---|
+| **Total Return (%)** | Percentage change from the first to the last closing price in the selected period |
+| **Annualised Return (%)** | Total return scaled to a 1-year equivalent, enabling fair comparison across different time periods |
+| **Volatility (%)** | Annualised standard deviation of daily returns — measures the magnitude of price swings |
+| **Sharpe Ratio** | Annualised return divided by volatility. Above 1.0 is generally considered good; above 2.0 is excellent |
+| **Max Drawdown (%)** | Largest peak-to-trough decline in the period — the worst loss a buy-and-hold investor would have experienced |
+| **Best Day (%)** | Largest single-day gain in the selected period |
+| **Worst Day (%)** | Largest single-day loss in the selected period |
+| **Avg Daily Volume** | Mean number of shares/units traded per day. `N/A` for indices and some forex pairs |
 
 ---
 
 ## Deployment
 
-The app is configured for deployment to [Render](https://render.com) via [`render.yaml`](./render.yaml). The build script ([`build.sh`](./build.sh)) installs Python dependencies, builds the React frontend, and gunicorn serves both the API and the compiled static files from a single process.
+### Render (current production deployment)
 
-### Required environment variables
+The app is deployed as a single Render web service that serves both the Flask API and the compiled React frontend from the same process.
 
-Set these in the Render dashboard under **Environment → Environment Variables**:
+Key configuration in `render.yaml`:
+- **Build command:** `./build.sh` — installs Python dependencies and builds the React bundle
+- **Start command:** `gunicorn --chdir backend app:app --bind 0.0.0.0:$PORT -c ../gunicorn.conf.py`
+- **Workers:** 1 — required because APScheduler is not multi-process safe
+- **Worker class:** eventlet — async worker supporting WebSocket connections
+- **Free PostgreSQL database** for scheduled job persistence across restarts
 
-| Variable | Description |
-|---|---|
-| `FLASK_ENV` | Set to `production` |
-| `SMTP_HOST` | SMTP server hostname (e.g. `smtp.gmail.com`) |
-| `SMTP_PORT` | SMTP port (e.g. `587`) |
-| `SMTP_USER` | Gmail address used to send reports |
-| `SMTP_PASSWORD` | 16-character Gmail App Password |
-| `REPORT_RECIPIENT` | Default recipient added to all scheduled report emails |
+Environment variables are set in the Render dashboard. See [Environment Variables](#environment-variables) above.
 
-> **Free tier note:** Render's free tier spins down instances after 15 minutes of inactivity. Use a service such as [cron-job.org](https://cron-job.org) to ping `/api/health` every 10 minutes to keep the instance warm and ensure scheduled jobs fire on time.
+### Docker (any platform)
+
+See [DOCKER.md](DOCKER.md) for full Docker documentation. The multi-stage `Dockerfile` builds the React bundle in a `node:20-alpine` stage, then copies the compiled output into a lean `python:3.11-slim` production image — the Node.js runtime never reaches production.
+
+```bash
+# Quick start
+docker compose up --build
+
+# Production with named volume
+docker compose -f docker-compose.prod.yml up -d
+```
+
+### Known limitations on the Render free tier
+
+- **Cold starts** — the service spins down after 15 minutes of inactivity. The scheduler pings `/api/health` every 10 minutes to keep it warm.
+- **Ephemeral filesystem** — generated charts and PDFs are stored on Render's ephemeral disk and are lost on redeploy. A cache miss triggers a fresh pipeline run automatically.
+- **Scheduled jobs** — persisted in PostgreSQL and survive all restarts and redeployments without any data loss.
 
 ---
 
-## Project Structure
+## CI/CD
 
-```
-financial_reporting_pipeline_webapp/
-│
-├── analysis.py              # Financial metrics and series computation
-├── charts.py                # Chart generation (matplotlib, mplfinance, seaborn)
-├── cleaner.py               # Data cleaning and derived column computation
-├── config.py                # Absolute path constants (DATA_DIR, CHARTS_DIR, etc.)
-├── db.py                    # SQLite schema and query layer
-├── fetcher.py               # Yahoo Finance data fetching (yfinance)
-├── report.py                # PDF report generation (fpdf2)
-├── requirements.txt
-├── render.yaml              # Render deployment configuration
-├── build.sh                 # Production build script
-├── .python-version          # Pins Python 3.11 on Render
-│
-├── backend/
-│   ├── app.py               # Flask application factory and server entry point
-│   ├── scheduler.py         # APScheduler setup, job persistence, SMTP email helper
-│   └── api/
-│       ├── assets.py        # GET /api/assets — categories, periods, intervals, ticker validation
-│       ├── pipeline.py      # POST /api/pipeline/run, GET /api/pipeline/status
-│       ├── reports.py       # GET /api/reports — chart image and PDF file serving
-│       └── schedule.py      # POST /api/schedule/add, DELETE /remove, GET /list
-│
-├── frontend/
-│   ├── index.html
-│   ├── vite.config.js
-│   └── src/
-│       ├── main.jsx
-│       ├── App.jsx
-│       ├── api/
-│       │   └── client.js          # Axios wrapper for all API endpoints
-│       └── components/
-│           ├── AssetSelector.jsx  # Category tabs, asset cards, custom ticker validation
-│           ├── ChartViewer.jsx    # Tabbed chart display with loading skeletons
-│           ├── Dashboard.jsx      # Post-run results layout
-│           ├── ErrorBoundary.jsx  # Global React error boundary
-│           ├── MetricsPanel.jsx   # Summary statistics cards
-│           ├── ReportDownload.jsx # PDF download button
-│           ├── ScheduleManager.jsx # Active scheduled jobs table
-│           └── ScheduleModal.jsx  # Schedule creation form
-│
-├── data/                    # Runtime output (gitignored)
-│   ├── raw/                 # Downloaded price CSVs and asset info JSON
-│   ├── clean/               # Cleaned and enriched price CSVs
-│   ├── charts/              # Generated chart PNGs
-│   ├── reporting.db         # SQLite database
-│   └── scheduled_jobs.json  # Persisted APScheduler job state
-│
-└── tests/
-    └── test_cleaner.py
-```
+GitHub Actions runs on every push to `main`:
+
+| Job | What it does |
+|---|---|
+| **Test** | Runs 103 pytest unit tests with coverage upload to Codecov |
+| **Lint** | Runs flake8, black (format check), and isort on all Python files |
+| **Docker build** | Builds the full multi-stage Docker image to validate the Dockerfile |
+
+The CI badge at the top reflects the latest run. Coverage reports are available at [codecov.io/gh/HamzaLatif02/finpipe](https://codecov.io/gh/HamzaLatif02/finpipe).
+
+---
+
+## Security
+
+| Measure | Detail |
+|---|---|
+| **Rate limiting** | Pipeline endpoints limited to 10 requests/hour per IP via Flask-Limiter; UI shows a countdown timer on 429 responses |
+| **Email double opt-in** | Scheduled reports require clicking a confirmation link before the job activates |
+| **Per-job tokens** | Each scheduled job has a secret token stored in the browser; cancellation requires that token |
+| **CORS restriction** | In production, CORS and SocketIO origins are restricted to `finpipe.xyz` |
+| **Non-root Docker** | Container runs as `appuser` (uid 1001), never as root |
+| **No secrets in code** | All credentials loaded from environment variables; `.env` is gitignored |
+| **Admin endpoints** | Cache management endpoints require an `X-Admin-Token` header |
+| **Input validation** | Ticker symbols validated against a strict regex (`^[A-Z0-9.\-\^=]{1,20}$`) before any backend processing |
+
+---
+
+## Related Project
+
+This web app is built on top of the **[Financial Reporting Pipeline](https://github.com/HamzaLatif02/financial_reporting_pipeline)** — a standalone terminal pipeline that runs the same analysis from the command line with weekly scheduled email delivery via APScheduler.
+
+The core pipeline modules — `fetcher.py`, `cleaner.py`, `analysis.py`, `charts.py`, `report.py` — are shared between both projects. The web app wraps them in a Flask REST API with WebSocket progress tracking and a React frontend, without modifying the underlying pipeline logic.
 
 ---
 
 ## Disclaimer
 
-This application is for educational purposes only. Nothing it produces constitutes financial advice. All data is sourced from Yahoo Finance via the `yfinance` library and may be delayed or inaccurate. Do not make investment decisions based on the output of this tool.
+This project is built for educational and portfolio purposes only. All data is sourced from Yahoo Finance via the `yfinance` library. Reports and analysis generated by this application do not constitute financial advice. Past performance is not indicative of future results. Do not make investment decisions based on output from this tool.
+
+---
+
+## Author
+
+**Hamza Latif**  
+MSc Data Science — King's College London (Distinction)  
+BSc Computer Science — City, University of London (First Class)
+
+[GitHub](https://github.com/HamzaLatif02) · [LinkedIn](https://linkedin.com/in/YOUR_LINKEDIN_HANDLE) · [Email](mailto:lhamza1020@gmail.com)
