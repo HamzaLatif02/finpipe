@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Node
+frontend/node_modules/
+frontend/build/
+frontend/.cache/
+frontend/dist/
+
+# Data (generated at runtime — mount as a volume instead)
+data/
+
+# Git
+.git/
+.gitignore
+.github/
+
+# Environment files (secrets must never be baked into the image)
+.env
+.env.*
+ENV_VARS.md
+
+# Dev tools
+.flake8
+pyproject.toml
+pytest.ini
+requirements-dev.txt
+tests/
+conftest.py
+test_email.py
+
+# Documentation
+DOCKER.md
+*.md
+!README.md
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Fonts are needed for PDF generation — DO NOT ignore fonts/

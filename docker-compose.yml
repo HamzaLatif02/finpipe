@@ -1,0 +1,31 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    ports:
+      - "8000:8000"
+    environment:
+      - FLASK_ENV=production
+      - PORT=8000
+      - SECRET_KEY=${SECRET_KEY:-local-dev-secret-key}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - RATELIMIT_STORAGE_URI=memory://
+      # Leave DATABASE_URL empty for local SQLite-only mode
+      - DATABASE_URL=${DATABASE_URL:-}
+      - RENDER_EXTERNAL_URL=http://localhost:8000
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-local-admin-token}
+    volumes:
+      # Mount data/ so generated reports persist across restarts
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped

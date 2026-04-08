@@ -5,6 +5,7 @@
 [![codecov](https://codecov.io/gh/HamzaLatif02/finpipe/branch/main/graph/badge.svg)](https://codecov.io/gh/HamzaLatif02/finpipe)
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/release/python-3110/)
 [![Flask](https://img.shields.io/badge/flask-3.x-green.svg)](https://flask.palletsprojects.com/)
+[![Docker](https://img.shields.io/badge/docker-ready-blue?logo=docker)](https://github.com/HamzaLatif02/finpipe/blob/main/DOCKER.md)
 
 A full-stack web application that runs a complete financial data pipeline for any asset available on Yahoo Finance. Select a ticker, configure a time period and interval, and the app fetches price history, computes key metrics, generates six analytical charts, and produces a downloadable PDF report — all from a single form submission. Reports can also be delivered automatically by email on a daily, weekly, or monthly schedule configured entirely from the browser.
 
@@ -142,6 +143,23 @@ npm run dev
 ```
 
 Open `http://localhost:5173`. The Vite dev server proxies all `/api` requests to the Flask backend.
+
+---
+
+## Docker
+
+Run the entire app with a single command:
+
+```bash
+git clone https://github.com/HamzaLatif02/finpipe.git
+cd finpipe
+cp .env.example .env   # fill in your credentials
+docker compose up --build
+```
+
+Then open [http://localhost:8000](http://localhost:8000).
+
+See [DOCKER.md](DOCKER.md) for full Docker documentation including `docker run` usage, environment variables, and data persistence.
 
 ---
 

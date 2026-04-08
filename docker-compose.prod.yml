@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  app:
+    image: financial-pipeline:latest
+    ports:
+      - "8000:8000"
+    environment:
+      - FLASK_ENV=production
+      - PORT=8000
+      - SECRET_KEY=${SECRET_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - DATABASE_URL=${DATABASE_URL}
+      - RATELIMIT_STORAGE_URI=${RATELIMIT_STORAGE_URI:-memory://}
+      - RENDER_EXTERNAL_URL=${RENDER_EXTERNAL_URL}
+      - ADMIN_TOKEN=${ADMIN_TOKEN}
+      - RESEND_TO_OVERRIDE=${RESEND_TO_OVERRIDE:-}
+    volumes:
+      - app-data:/app/data
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  app-data:
+    driver: local
