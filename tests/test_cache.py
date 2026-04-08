@@ -6,7 +6,7 @@ reporting.db.  The HTTP tests build a minimal Flask app (same pattern as
 test_rate_limiting.py) that wires up the pipeline blueprint with a mocked
 pipeline and a real in-memory SQLite cache.
 """
-import json
+import json  # noqa: F401
 import os
 import sys
 import tempfile
@@ -84,6 +84,7 @@ SAMPLE_RESULT = {
 # Part 1 — db cache functions (direct, no Flask)
 # ══════════════════════════════════════════════════════════════════════════════
 
+@pytest.mark.unit
 class TestMakeCacheKey:
 
     def test_same_config_same_key(self):
@@ -125,6 +126,7 @@ class TestMakeCacheKey:
         assert k_upper == k_lower
 
 
+@pytest.mark.unit
 class TestSaveAndGetCachedReport:
 
     def setup_method(self):
@@ -209,6 +211,7 @@ class TestSaveAndGetCachedReport:
         assert cached["result"]["summary_stats"]["total_return_pct"] == 99.0
 
 
+@pytest.mark.unit
 class TestPurgeExpiredCache:
 
     def setup_method(self):
@@ -225,7 +228,7 @@ class TestPurgeExpiredCache:
 
     def test_purge_removes_expired_entries(self, tmp_path):
         """Insert an already-expired entry directly; purge should remove it."""
-        from db import purge_expired_cache, _make_cache_key
+        from db import purge_expired_cache, _make_cache_key  # noqa: F401
         conn = sqlite3.connect(self.db_path)
         now = time.time()
         conn.execute("""
@@ -329,6 +332,7 @@ def http_client(tmp_path):
     db_module.DB_PATH = orig_path
 
 
+@pytest.mark.unit
 class TestHTTPCacheEndpoint:
 
     def test_cache_miss_runs_pipeline(self, http_client):

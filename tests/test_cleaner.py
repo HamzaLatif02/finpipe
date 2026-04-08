@@ -31,6 +31,7 @@ def _run_clean(df, symbol="TEST"):
 # ---------------------------------------------------------------------------
 # 1. Rows with null Close values are dropped
 # ---------------------------------------------------------------------------
+@pytest.mark.unit
 def test_null_close_rows_dropped():
     df = _make_prices(
         ("2024-01-01", 100, 105, 98, 102, 1000),
@@ -45,6 +46,7 @@ def test_null_close_rows_dropped():
 # ---------------------------------------------------------------------------
 # 2. Rows with zero Close values are dropped
 # ---------------------------------------------------------------------------
+@pytest.mark.unit
 def test_zero_close_rows_dropped():
     df = _make_prices(
         ("2024-01-01", 100, 105, 98,  102, 1000),
@@ -59,6 +61,7 @@ def test_zero_close_rows_dropped():
 # ---------------------------------------------------------------------------
 # 3. Duplicate dates are removed — last occurrence kept
 # ---------------------------------------------------------------------------
+@pytest.mark.unit
 def test_duplicate_dates_last_kept():
     df = _make_prices(
         ("2024-01-01", 100, 105, 98,  102, 1000),
@@ -75,6 +78,7 @@ def test_duplicate_dates_last_kept():
 # ---------------------------------------------------------------------------
 # 4. daily_return is computed correctly (spot-check second row)
 # ---------------------------------------------------------------------------
+@pytest.mark.unit
 def test_daily_return_spot_check():
     df = _make_prices(
         ("2024-01-01", 100, 105, 98,  100, 1000),
@@ -90,6 +94,7 @@ def test_daily_return_spot_check():
 # ---------------------------------------------------------------------------
 # 5. cumulative_return starts at 0.0 for the first row
 # ---------------------------------------------------------------------------
+@pytest.mark.unit
 def test_cumulative_return_starts_at_zero():
     df = _make_prices(
         ("2024-01-01", 100, 105, 98,  100, 1000),
@@ -105,6 +110,7 @@ def test_cumulative_return_starts_at_zero():
 # ---------------------------------------------------------------------------
 # 6. Output is sorted by Date ascending
 # ---------------------------------------------------------------------------
+@pytest.mark.unit
 def test_output_sorted_ascending():
     df = _make_prices(
         ("2024-01-03", 103, 108, 102, 106, 1200),   # intentionally out of order
@@ -119,6 +125,7 @@ def test_output_sorted_ascending():
 # ---------------------------------------------------------------------------
 # 7. vwap is skipped gracefully when Volume is all zeros
 # ---------------------------------------------------------------------------
+@pytest.mark.unit
 def test_vwap_skipped_when_volume_zero():
     df = _make_prices(
         ("2024-01-01", 100, 105, 98,  102, 0),

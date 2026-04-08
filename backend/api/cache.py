@@ -12,7 +12,7 @@ if _ROOT not in sys.path:
 
 from db import (  # noqa: E402
     list_cache_entries, purge_expired_cache,
-    delete_cached_report, _make_cache_key,
+    delete_cached_report,
 )
 from extensions import limiter  # noqa: E402
 from schemas import (           # noqa: E402

@@ -1,0 +1,15 @@
+[tool.black]
+line-length = 100
+exclude = '''
+/(
+    \.venv
+  | frontend
+  | __pycache__
+  | \.git
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip = [".venv", "frontend"]

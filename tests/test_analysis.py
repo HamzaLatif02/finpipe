@@ -103,6 +103,7 @@ def mock_load_clean(mocker, sample_prices_df):
 
 # ── Summary stats ─────────────────────────────────────────────────────────────
 
+@pytest.mark.unit
 class TestSummaryStats:
 
     def test_all_required_keys_present(
@@ -194,6 +195,7 @@ class TestSummaryStats:
 
 # ── Moving averages ───────────────────────────────────────────────────────────
 
+@pytest.mark.unit
 class TestMovingAverages:
 
     def test_ma20_column_present_with_sufficient_data(
@@ -232,6 +234,7 @@ class TestMovingAverages:
 
 # ── Monthly returns ───────────────────────────────────────────────────────────
 
+@pytest.mark.unit
 class TestMonthlyReturns:
 
     def test_monthly_returns_none_with_short_data(
@@ -262,6 +265,7 @@ class TestMonthlyReturns:
 
 # ── Drawdown series ───────────────────────────────────────────────────────────
 
+@pytest.mark.unit
 class TestDrawdown:
 
     def test_drawdown_series_is_not_none(
@@ -295,6 +299,7 @@ class TestDrawdown:
 
 # ── Output structure ──────────────────────────────────────────────────────────
 
+@pytest.mark.unit
 class TestOutputStructure:
 
     def test_all_required_top_level_keys_present(
@@ -397,7 +402,7 @@ class TestOutputStructure:
     ):
         """If the info JSON file exists, asset_info is populated from it."""
         import json
-        from unittest.mock import mock_open, patch, MagicMock
+        from unittest.mock import mock_open, patch, MagicMock  # noqa: F401
         fake_info = {"longName": "Test Corp", "currency": "USD"}
         mock_path = MagicMock()
         mock_path.exists.return_value = True

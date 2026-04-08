@@ -62,6 +62,7 @@ def mock_anthropic(mocker):
 
 # ── API call behaviour ────────────────────────────────────────────────────────
 
+@pytest.mark.unit
 class TestAnalyseChart:
 
     def test_returns_non_empty_string(
@@ -172,6 +173,7 @@ class TestAnalyseChart:
 
 # ── Cache behaviour ───────────────────────────────────────────────────────────
 
+@pytest.mark.unit
 class TestCaching:
 
     def test_second_call_hits_cache_not_api(
@@ -207,6 +209,7 @@ class TestCaching:
 
 # ── Fallback behaviour ────────────────────────────────────────────────────────
 
+@pytest.mark.unit
 class TestFallback:
 
     def test_fallback_on_api_constructor_exception(
@@ -270,6 +273,7 @@ class TestFallback:
 
 # ── Sanitiser ─────────────────────────────────────────────────────────────────
 
+@pytest.mark.unit
 class TestSanitiser:
 
     def test_em_dash_replaced_with_hyphen(

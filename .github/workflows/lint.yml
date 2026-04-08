@@ -1,0 +1,35 @@
+name: Lint
+
+on:
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  lint:
+    name: Lint Python
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install linting tools
+        run: pip install flake8 black isort
+
+      - name: Run flake8 (errors and undefined names)
+        run: |
+          flake8 . \
+            --exclude=.venv,frontend,migrations,__pycache__,.git \
+            --max-line-length=100 \
+            --ignore=E501,W503,E203,E221,E241,E272,E127,E701,E702,E402 \
+            --select=E,F,W \
+            --count \
+            --statistics

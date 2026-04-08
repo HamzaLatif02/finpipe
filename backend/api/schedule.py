@@ -16,7 +16,7 @@ from scheduler import (  # noqa: E402
     add_job, activate_job, remove_job, list_jobs,
     get_stored_token, get_job_meta, run_pipeline_and_email,
 )
-from pg_jobs import confirm_job, pg_load_confirmed_jobs, pg_load_pending_jobs  # noqa: E402
+from pg_jobs import confirm_job, pg_load_pending_jobs  # noqa: E402
 from extensions import limiter  # noqa: E402
 from schemas import (          # noqa: E402
     ScheduleAddResponseSchema, ConfirmResponseSchema, RemoveJobResponseSchema,

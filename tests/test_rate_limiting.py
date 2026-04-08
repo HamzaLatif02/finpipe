@@ -103,6 +103,7 @@ def client():
 
 # ── 429 response shape ────────────────────────────────────────────────────────
 
+@pytest.mark.unit
 class TestRateLimitResponseShape:
 
     def test_429_returns_json_with_error_key(self, client):
@@ -138,6 +139,7 @@ class TestRateLimitResponseShape:
 
 # ── Pipeline endpoint limits ──────────────────────────────────────────────────
 
+@pytest.mark.unit
 class TestPipelineLimits:
 
     def test_pipeline_allows_first_request(self, client):
@@ -162,6 +164,7 @@ class TestPipelineLimits:
 
 # ── Comparison endpoint limits ────────────────────────────────────────────────
 
+@pytest.mark.unit
 class TestComparisonLimits:
 
     def test_comparison_allows_first_request(self, client):
@@ -185,6 +188,7 @@ class TestComparisonLimits:
 
 # ── Schedule endpoint limits ──────────────────────────────────────────────────
 
+@pytest.mark.unit
 class TestScheduleLimits:
 
     def test_schedule_add_allows_first_request(self, client):
@@ -212,6 +216,7 @@ class TestScheduleLimits:
 
 # ── Assets endpoints are exempt ───────────────────────────────────────────────
 
+@pytest.mark.unit
 class TestAssetsExempt:
 
     def test_categories_never_rate_limited(self, client):
@@ -245,6 +250,7 @@ class TestAssetsExempt:
 
 # ── Rate limit headers ────────────────────────────────────────────────────────
 
+@pytest.mark.unit
 class TestRateLimitHeaders:
 
     def test_pipeline_response_includes_ratelimit_headers(self, client):

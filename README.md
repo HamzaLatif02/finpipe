@@ -1,5 +1,11 @@
 # Financial Reporting Pipeline
 
+[![CI](https://github.com/HamzaLatif02/finpipe/actions/workflows/ci.yml/badge.svg)](https://github.com/HamzaLatif02/finpipe/actions/workflows/ci.yml)
+[![Lint](https://github.com/HamzaLatif02/finpipe/actions/workflows/lint.yml/badge.svg)](https://github.com/HamzaLatif02/finpipe/actions/workflows/lint.yml)
+[![codecov](https://codecov.io/gh/HamzaLatif02/finpipe/branch/main/graph/badge.svg)](https://codecov.io/gh/HamzaLatif02/finpipe)
+[![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/release/python-3110/)
+[![Flask](https://img.shields.io/badge/flask-3.x-green.svg)](https://flask.palletsprojects.com/)
+
 A full-stack web application that runs a complete financial data pipeline for any asset available on Yahoo Finance. Select a ticker, configure a time period and interval, and the app fetches price history, computes key metrics, generates six analytical charts, and produces a downloadable PDF report — all from a single form submission. Reports can also be delivered automatically by email on a daily, weekly, or monthly schedule configured entirely from the browser.
 
 Built with Flask and React. Developed with [Claude Code](https://claude.ai/code).

@@ -441,7 +441,7 @@ class ComparisonReport(FPDF):
         name_b = comparison["name_b"]
 
         a_stats = (comparison.get("analysis_a") or {}).get("summary_stats") or {}
-        b_stats = (comparison.get("analysis_b") or {}).get("summary_stats") or {}
+        b_stats = (comparison.get("analysis_b") or {}).get("summary_stats") or {}  # noqa: F841
 
         path_map = {}
         for p in chart_paths:

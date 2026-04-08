@@ -1,0 +1,6 @@
+[flake8]
+max-line-length = 100
+exclude = .venv, frontend, __pycache__, migrations, .git
+ignore = E501, W503, E203, E221, E241, E272, E127, E701, E702, E402
+per-file-ignores =
+    tests/*: S101, S105

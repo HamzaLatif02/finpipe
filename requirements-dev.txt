@@ -1,0 +1,9 @@
+pytest
+pytest-mock
+pytest-cov
+pytest-flask
+responses
+freezegun
+flake8
+black
+isort

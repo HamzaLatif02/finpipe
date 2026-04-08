@@ -193,7 +193,7 @@ def run_pipeline():
     # ------------------------------------------------------------------ #
     try:
         fetched = fetch_data(config)
-        prices_df = fetched["prices"]
+        prices_df = fetched["prices"]  # noqa: F841 — fetched for side-effects in fetch_data
         info_dict = fetched["info"]
     except Exception as exc:
         logger.exception("fetch_data failed for %s", symbol)

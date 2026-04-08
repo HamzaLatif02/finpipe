@@ -12,10 +12,13 @@ from pathlib import Path
 
 # Do NOT capture PID at module level — that freezes the master's PID.
 # Call os.getpid() inline so each log line reflects the actual running process.
+
+
 def _pid() -> int:
     return os.getpid()
 
-from apscheduler.schedulers.background import BackgroundScheduler
+
+from apscheduler.schedulers.background import BackgroundScheduler  # noqa: E402
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from pytz import timezone
