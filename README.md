@@ -1,19 +1,21 @@
-# Financial Pipeline
+# Finpipe
 
-*Automated financial analysis and reporting for any Yahoo Finance asset — stocks, ETFs, forex, crypto and commodities. No API key required.*
+*Automated financial analysis and reporting for any Yahoo Finance asset — stocks, ETFs, forex, crypto and commodities. No API key required. Built with [Claude Code](https://claude.com/product/claude-code)*
 
 [![CI](https://github.com/HamzaLatif02/finpipe/actions/workflows/ci.yml/badge.svg)](https://github.com/HamzaLatif02/finpipe/actions/workflows/ci.yml) [![Lint](https://github.com/HamzaLatif02/finpipe/actions/workflows/lint.yml/badge.svg)](https://github.com/HamzaLatif02/finpipe/actions/workflows/lint.yml) [![codecov](https://codecov.io/gh/HamzaLatif02/finpipe/branch/main/graph/badge.svg)](https://codecov.io/gh/HamzaLatif02/finpipe) [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/) [![Flask](https://img.shields.io/badge/flask-3.x-green.svg)](https://flask.palletsprojects.com/) [![Docker](https://img.shields.io/badge/docker-ready-blue?logo=docker)](./DOCKER.md) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **[Live Demo](https://finpipe.xyz)** · **[API Docs](https://finpipe.xyz/docs)** · **[Original Terminal Pipeline](https://github.com/HamzaLatif02/financial_reporting_pipeline)**
 
-![Dashboard](docs/screenshots/dashboard.png)
-*Screenshot: main dashboard showing AAPL analysis with metrics and candlestick chart*
+<p align="center">
+  <img src="docs/screenshots/dashboard.png" width="800"/>
+</p>
+<p align="center"><i>Main dashboard showing AAPL analysis with metrics and candlestick chart.</i></p>
 
 ---
 
 ## Overview
 
-Financial Pipeline is a full-stack web application that runs a complete quantitative analysis pipeline for any asset on Yahoo Finance. It started life as a [terminal-based pipeline script](https://github.com/HamzaLatif02/financial_reporting_pipeline) and was extended into a production web application. Pick any ticker — stock, ETF, index, forex pair, cryptocurrency, or commodity — set the period and interval, and the app fetches price history, computes eight key performance metrics, generates six analytical charts, and produces a downloadable PDF report. Everything runs from a browser with no account, no API key, and no installation required.
+Finpipe is a full-stack web application that runs a complete quantitative analysis pipeline for any asset on Yahoo Finance. It started life as a [terminal-based pipeline script](https://github.com/HamzaLatif02/financial_reporting_pipeline) and was extended into a production web application. Pick any ticker — stock, ETF, index, forex pair, cryptocurrency, or commodity — set the period and interval, and the app fetches price history, computes eight key performance metrics, generates six analytical charts, and produces a downloadable PDF report. Everything runs from a browser with no account, no API key, and no installation required.
 
 There are two audiences for this project. Individual investors and finance enthusiasts get professional-grade analysis — Sharpe ratio, maximum drawdown, annualised volatility, moving average overlays, monthly returns heatmaps — without needing a Bloomberg terminal. Technical reviewers and hiring managers get a full-stack project covering the complete engineering stack: ETL data pipeline, REST API, WebSocket real-time progress, report generation, scheduled email delivery, Docker containerisation, and CI/CD — all deployed and publicly accessible.
 
@@ -62,34 +64,50 @@ There are two audiences for this project. Individual investors and finance enthu
 
 ## Screenshots
 
-> **Note for contributors:** Replace placeholder images by adding screenshots to `docs/screenshots/`. Screenshots should be PNG, 1280×800px for desktop views and 390×844px for mobile. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+<p align="center">
+  <img src="docs/screenshots/asset-selector.png" width="800"/>
+</p>
+<p align="center"><i>Asset selector — browse five categories or enter a custom ticker with live validation.</i></p>
 
-![Asset Selector](docs/screenshots/asset-selector.png)
-*Asset selector — browse five categories or enter a custom ticker with live validation*
+<p align="center">
+  <img src="docs/screenshots/progress.png" width="800"/>
+</p>
+<p align="center"><i>Real-time WebSocket progress bar with seven named stages and live percentage.</i></p>
 
-![Pipeline Progress](docs/screenshots/progress.png)
-*Real-time WebSocket progress bar with seven named stages and live percentage*
+<p align="center">
+  <img src="docs/screenshots/dashboard-metrics.png" width="800"/>
+</p>
+<p align="center"><i>Dashboard — eight quantitative metrics with positive/negative colour coding.</i></p>
 
-![Dashboard Metrics](docs/screenshots/dashboard-metrics.png)
-*Dashboard — eight quantitative metrics with positive/negative colour coding*
+<p align="center">
+  <img src="docs/screenshots/dashboard-charts.png" width="800"/>
+</p>
+<p align="center"><i>Tabbed chart viewer — candlestick with volume, moving averages, drawdown, monthly heatmap.</i></p>
 
-![Dashboard Charts](docs/screenshots/dashboard-charts.png)
-*Tabbed chart viewer — candlestick with volume, moving averages, drawdown, monthly heatmap*
+<p align="center">
+  <img src="docs/screenshots/comparison.png" width="800"/>
+</p>
+<p align="center"><i>Comparison mode — AAPL vs MSFT with correlation score and side-by-side metrics.</i></p>
 
-![Comparison Mode](docs/screenshots/comparison.png)
-*Comparison mode — AAPL vs MSFT with correlation score and side-by-side metrics*
+<p align="center">
+  <img src="docs/screenshots/report.png" width="800"/>
+</p>
+<p align="center"><i>Generated PDF report with AI-written chart descriptions.</i></p>
 
-![PDF Report](docs/screenshots/report.png)
-*Generated PDF report with AI-written chart descriptions*
+<p align="center">
+  <img src="docs/screenshots/schedule-modal.png" width="800"/>
+</p>
+<p align="center"><i>Schedule automated email reports — daily, weekly or monthly with double opt-in.</i></p>
 
-![Schedule Modal](docs/screenshots/schedule-modal.png)
-*Schedule automated email reports — daily, weekly or monthly with double opt-in*
+<p align="center">
+  <img src="docs/screenshots/mobile.png" width="800"/>
+</p>
+<p align="center"><i>Mobile layout — scrollable category tabs and bottom-sheet modal at 375px.</i></p>
 
-![Mobile View](docs/screenshots/mobile.png)
-*Mobile layout — scrollable category tabs and bottom-sheet modal at 375px*
-
-![API Docs](docs/screenshots/api-docs.png)
-*Interactive OpenAPI 3.0 documentation at /docs*
+<p align="center">
+  <img src="docs/screenshots/api-docs.png" width="800"/>
+</p>
+<p align="center"><i>Interactive OpenAPI 3.0 documentation at /docs.</i></p>
 
 ---
 
@@ -481,4 +499,4 @@ This project is built for educational and portfolio purposes only. All data is s
 MSc Data Science — King's College London (Distinction)  
 BSc Computer Science — City, University of London (First Class)
 
-[GitHub](https://github.com/HamzaLatif02) · [LinkedIn](https://linkedin.com/in/YOUR_LINKEDIN_HANDLE) · [Email](mailto:lhamza1020@gmail.com)
+[GitHub](https://github.com/HamzaLatif02) · [LinkedIn](https://www.linkedin.com/in/latif-hamza/) · [Email](mailto:lhamza1020@gmail.com)
