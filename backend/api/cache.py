@@ -21,7 +21,7 @@ from schemas import (           # noqa: E402
 )
 
 cache_bp = Blueprint(
-    "cache", __name__,
+    "Cache", __name__,
     description="Inspect active cache entries and manage cache invalidation.",
 )
 logger = logging.getLogger(__name__)

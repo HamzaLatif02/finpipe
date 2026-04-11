@@ -25,7 +25,7 @@ from schemas import (                                    # noqa: E402
 )
 
 comparison_bp = Blueprint(
-    "comparison", __name__,
+    "Comparison", __name__,
     description="Side-by-side comparison of two assets over the same period.",
 )
 logger = logging.getLogger(__name__)

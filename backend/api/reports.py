@@ -15,7 +15,7 @@ _DATA_DIR   = os.path.join(_ROOT, "data")
 from schemas import ReportListResponseSchema, ErrorResponseSchema  # noqa: E402
 
 reports_bp = Blueprint(
-    "reports", __name__,
+    "Reports", __name__,
     description="Serve generated chart images and PDF reports.",
 )
 logger = logging.getLogger(__name__)

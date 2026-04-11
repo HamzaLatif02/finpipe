@@ -16,7 +16,7 @@ from schemas import (
 )
 
 assets_bp = Blueprint(
-    "assets", __name__,
+    "Assets", __name__,
     description="Asset categories, available periods/intervals, and ticker validation.",
 )
 logger = logging.getLogger(__name__)

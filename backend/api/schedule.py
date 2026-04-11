@@ -25,7 +25,7 @@ from schemas import (          # noqa: E402
 )
 
 schedule_bp = Blueprint(
-    "schedule", __name__,
+    "Schedule", __name__,
     description="Schedule recurring email reports with double opt-in confirmation.",
 )
 logger = logging.getLogger(__name__)

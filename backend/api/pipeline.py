@@ -31,7 +31,7 @@ from schemas import (
 )
 
 pipeline_bp = Blueprint(
-    "pipeline", __name__,
+    "Pipeline", __name__,
     description="Run the full financial analysis pipeline for a single asset.",
 )
 logger = logging.getLogger(__name__)
